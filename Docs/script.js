@@ -115,20 +115,6 @@ async function startCamera() {
     } catch (err) {
     console.error("Erro ao acessar a câmera:", err);
     alert("Não foi possível acessar a câmera. Por favor, verifique as permissões.");
-
-// Força a remoção das permissões anteriores antes de recarregar
-    if (navigator.permissions) {
-        navigator.permissions.query({name: 'camera'}).then(permissionStatus => {
-            permissionStatus.onchange = () => {
-                // Quando as permissões mudarem, recarrega a página
-                window.location.reload();
-            };
-        // Revoga o acesso anterior (nem todos os navegadores suportam)
-            if (permissionStatus.state === 'granted' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                const tracks = ;
-                tracks.forEach(track => track.stop());
-            }
-        });
     }
 
 async function toggleFlash() {
