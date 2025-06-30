@@ -47,7 +47,7 @@ function init() {
         loadingScreen.classList.add('hidden');
         container.classList.remove('hidden');
         startCamera();
-    }, 3000);
+    }, 0);
     
     setupEventListeners();
     
