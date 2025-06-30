@@ -131,12 +131,6 @@ async function startCamera() {
         });
     }
 
-// Recarrega após um pequeno delay para dar tempo de revogar as permissões
-        setTimeout(() => {
-            window.location.reload();
-        }, 500);
-    }
-
 async function toggleFlash() {
     if (!cameraStream) return;
     
