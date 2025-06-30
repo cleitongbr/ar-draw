@@ -48,13 +48,17 @@ body {
 #loading-screen .logo {
     width: 120px;
     height: 120px;
-    animation: pulse 2s infinite;
+    animation: pulse 3s infinite;
 }
 
 @keyframes pulse {
-    0% { opacity: 0.5; transform: scale(0.95); }
-    50% { opacity: 1; transform: scale(1.05); }
-    100% { opacity: 0.5; transform: scale(0.95); }
+    0% { opacity: 0.5; transform: scale(0.80); }
+    20% { opacity: 1; transform: scale(1); }
+    40% { opacity: 0.5; transform: scale(0.80); }
+    60% { opacity: 1; transform: scale(1); }
+    80% { opacity: 0.5; transform: scale(0.80); }
+    90% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(3); }
 }
 
 .hidden {
@@ -125,7 +129,7 @@ video {
     background-color: var(--control-bg);
     backdrop-filter: blur(5px);
     color: var(--text-color);
-    display: flex;
+    display: center;
     justify-content: center;
     align-items: center;
     cursor: pointer;
@@ -137,6 +141,31 @@ video {
 }
 
 .control-btn img {
+    width: 24px;
+    height: 24px;
+    filter: invert(0.8);
+}
+
+.control-btn-1 {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: none;
+    background-color: var(--control-bg);
+    backdrop-filter: blur(5px);
+    color: var(--text-color);
+    display: center;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.control-btn-1:hover, .control-btn:active {
+    background-color: var(--control-bg-hover);
+}
+
+.control-btn-1 img {
     width: 24px;
     height: 24px;
     filter: invert(0.8);
@@ -233,7 +262,8 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .social-links {
-    display: flex;
+    display: center;
+    align-items: center;
     justify-content: center;
     gap: 15px;
     margin: 15px 0;
