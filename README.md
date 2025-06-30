@@ -1,3 +1,1 @@
-# pyautodraw
-
-## BETA draw bot 
+BETAAAA 30/06/2025 
