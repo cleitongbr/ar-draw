@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
+
 /* Reset e configurações básicas */
 * {
     margin: 0;
@@ -19,6 +21,14 @@
     --text-color: #121212;
     --control-bg: rgba(0, 0, 0, 0.1);
     --control-bg-hover: rgba(0, 0, 0, 0.2);
+}
+
+.red-theme {
+    --bg-color: #300000;
+    --text-color: #ffcccc;
+    --control-bg: rgba(255, 100, 100, 0.2);
+    --control-bg-hover: rgba(255, 100, 100, 0.3);
+    --accent-color: #ff5555;
 }
 
 body {
@@ -103,20 +113,10 @@ video {
     -webkit-user-select: none;
     touch-action: none;
     transform-style: preserve-3d;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, opacity 0.3s;
 }
 
 /* Controles */
-.main-controls {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 15px;
-    z-index: 20;
-}
-
 .control-btn {
     width: 50px;
     height: 50px;
@@ -125,46 +125,28 @@ video {
     background-color: var(--control-bg);
     backdrop-filter: blur(5px);
     color: var(--text-color);
-    display: center;
+    display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
     transition: all 0.2s;
+    box-shadow: black 0 0 3px, rgba(0, 0, 0, 0.09) 0 0 1px;
 }
 
 .control-btn:hover, .control-btn:active {
     background-color: var(--control-bg-hover);
+    transform: scale(0.95);
+    shape-image-threshold: calc(
+        0.5 + (1 - var(--control-bg-hover)) * 0.5
+    );
+    box-shadow: white 0 0 10px, rgba(0, 0, 0, 0.2) 0 0 5px;
 }
 
 .control-btn img {
     width: 24px;
     height: 24px;
     filter: invert(0.8);
-}
-
-.control-btn-1 {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    border: none;
-    background-color: var(--control-bg);
-    backdrop-filter: blur(5px);
-    color: var(--text-color);
-    display: center;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.control-btn-1:hover, .control-btn:active {
-    background-color: var(--control-bg-hover);
-}
-
-.control-btn-1 img {
-    width: 24px;
-    height: 24px;
-    filter: invert(0.8);
+    transition: filter 1s;
 }
 
 .floating-btn {
@@ -175,9 +157,25 @@ video {
 
 #settings-btn {
     top: 20px;
+    transform: scale(1);
 }
 
-#about-btn {
+#settings-btn:hover {
+    rotate: 80deg;
+    transition: rotate 1s filter 1s;
+}
+#settings-btn img {
+    filter: invert(0.8);
+}
+#settings-btn:hover img {
+    filter: invert(1);
+    transform: scale(1.1);
+}
+#settings-btn:active {
+    transform: scale(0.9);
+}
+
+#flash-btn {
     top: 80px;
 }
 
@@ -197,8 +195,36 @@ video {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
+.settings-scroll {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.settings-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.settings-scroll::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.1);
+    border-radius: 3px;
+}
+
+.settings-scroll::-webkit-scrollbar-thumb {
+    background: var(--accent-color);
+    border-radius: 3px;
+}
+
 .settings-group {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.settings-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
 }
 
 .settings-group h3 {
@@ -210,10 +236,11 @@ video {
     display: flex;
     align-items: center;
     margin-bottom: 10px;
+    gap: 8px;
 }
 
 .slider-container span {
-    width: 100px;
+    min-width: 100px;
     font-size: 14px;
 }
 
@@ -223,6 +250,7 @@ input[type="range"] {
     background: var(--control-bg);
     border-radius: 4px;
     outline: none;
+    -webkit-appearance: none;
 }
 
 input[type="range"]::-webkit-slider-thumb {
@@ -232,6 +260,13 @@ input[type="range"]::-webkit-slider-thumb {
     border-radius: 50%;
     background: var(--accent-color);
     cursor: pointer;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    justify-content: center;
 }
 
 /* Menu sobre */
@@ -257,48 +292,21 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .social-links {
-    display: center;
-    align-items: center;
+    display: flex;
     justify-content: center;
     gap: 15px;
     margin: 15px 0;
 }
 
-.social-links a {
-    color: var(--accent-color);
-    text-decoration: none;
-    font-size: 14px;
-}
-
-/* Ajustes para orientação retrato */
-@media (orientation: portrait) {
-    .main-controls {
-        bottom: 10px;
-    }
-    
-    .control-btn {
-        width: 45px;
-        height: 45px;
-    }
-    
-    #settings-panel {
-        bottom: 70px;
-    }
-}
-
-/* Ajustes para tela cheia */
-:fullscreen .main-controls,
-:fullscreen .floating-btn {
-    display: none;
-}
-
-:fullscreen .main-controls:hover,
-:fullscreen .floating-btn:hover {
+/* Controles de tela cheia */
+#fullscreen-controls {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
-}
-/* Botão de flash */
-#flash-btn {
-    top: 140px;
+    gap: 15px;
+    z-index: 20;
 }
 
 /* Feedback visual para botões ativos */
@@ -310,25 +318,40 @@ input[type="range"]::-webkit-slider-thumb {
     filter: invert(1);
 }
 
-/* Melhorias no painel de configurações */
-.settings-group {
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+/* Animação do título */
+.titulo-animado {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.8em;
+    text-align: center;
+    display: block;
+    margin-bottom: 15px;
+    background: linear-gradient(45deg, #ff6ec4, #7873f5, #4adede);
+    background-size: 600% 600%;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: brilhoTexto 6s ease infinite;
+    text-shadow: 0 0 20px rgba(255,255,255,0.3);
 }
 
-.settings-group:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
+@keyframes brilhoTexto {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
-/* Ajustes para imagem importada */
-#imported-image {
-    touch-action: none;
-    user-select: none;
-    -webkit-user-drag: none;
-    max-width: 95%;
-    max-height: 95%;
-    cursor: move;
+/* Ajustes para orientação retrato */
+@media (orientation: portrait) {
+    .control-btn {
+        width: 45px;
+        height: 45px;
+    }
+    
+    #settings-panel {
+        bottom: 70px;
+    }
+    
+    #fullscreen-controls {
+        bottom: 10px;
+    }
 }
