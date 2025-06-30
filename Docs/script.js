@@ -1,116 +1,67 @@
 // Variáveis globais
 let cameraStream = null;
-let isDrawing = false;
-let isErasing = false;
-let lastX = 0;
-let lastY = 0;
-let currentColor = '#000000';
-let brushSize = 5;
-let drawingHistory = [];
-let currentHistoryIndex = -1;
 let rotationAngle = 0;
+let tiltAngle = 0;
 let isMirrored = false;
-let isBlurred = false;
-let scale = 1;
-let posX = 0;
-let posY = 0;
-let startX = 0;
-let startY = 0;
-let startDistance = 0;
-let startScale = 1;
-let startAngle = 0;
-let initialAngle = 0;
-let isPinching = false;
-let touchCount = 0;
+let brightness = 100;
+let isDarkTheme = true;
+let isSettingsOpen = false;
+let isAboutOpen = false;
 
 // Elementos DOM
+const loadingScreen = document.getElementById('loading-screen');
+const container = document.querySelector('.container');
 const video = document.getElementById('camera');
-const canvas = document.getElementById('drawing-canvas');
-const ctx = canvas.getContext('2d');
 const importedImage = document.getElementById('imported-image');
 const fileInput = document.getElementById('file-input');
-const opacitySlider = document.getElementById('opacity-slider');
-const brushBtn = document.getElementById('brush-btn');
-const eraserBtn = document.getElementById('eraser-btn');
-const colorPicker = document.getElementById('color-picker');
-const brushSizeSlider = document.getElementById('brush-size');
-const undoBtn = document.getElementById('undo-btn');
-const clearBtn = document.getElementById('clear-btn');
-const uploadBtn = document.getElementById('upload-btn');
-const flipCameraBtn = document.getElementById('flip-camera-btn');
-const rotateBtn = document.getElementById('rotate-btn');
+const importBtn = document.getElementById('import-btn');
+const fullscreenBtn = document.getElementById('fullscreen-btn');
+const settingsBtn = document.getElementById('settings-btn');
+const settingsPanel = document.getElementById('settings-panel');
+const rotateSlider = document.getElementById('rotate-slider');
+const tiltSlider = document.getElementById('tilt-slider');
 const mirrorBtn = document.getElementById('mirror-btn');
-const blurBtn = document.getElementById('blur-btn');
-const saveBtn = document.getElementById('save-btn');
+const brightnessSlider = document.getElementById('brightness-slider');
+const flipCameraBtn = document.getElementById('flip-camera-btn');
+const themeToggle = document.getElementById('theme-toggle');
 const aboutBtn = document.getElementById('about-btn');
-const aboutContent = document.getElementById('about-content');
+const aboutPanel = document.getElementById('about-panel');
 const closeAbout = document.getElementById('close-about');
 
 // Inicialização
 function init() {
-    setupCanvas();
-    setupEventListeners();
-    startCamera();
-    updateImageStyles();
-}
-
-// Configurar canvas
-function setupCanvas() {
-    resizeCanvas();
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-    ctx.globalCompositeOperation = 'source-over';
-    clearCanvas();
+    // Mostrar tela de carregamento por 2 segundos
+    setTimeout(() => {
+        loadingScreen.classList.add('hidden');
+        container.classList.remove('hidden');
+        startCamera();
+    }, 2000);
     
-    window.addEventListener('resize', () => {
-        resizeCanvas();
-        saveCanvasState();
-    });
-}
-
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    setupEventListeners();
 }
 
 // Configurar listeners de eventos
 function setupEventListeners() {
-    // Desenho no canvas
-    canvas.addEventListener('mousedown', startDrawing);
-    canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', stopDrawing);
-    canvas.addEventListener('mouseout', stopDrawing);
-    
-    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-    canvas.addEventListener('touchend', handleTouchEnd);
-    
     // Controles
-    brushBtn.addEventListener('click', () => setTool('brush'));
-    eraserBtn.addEventListener('click', () => setTool('eraser'));
-    colorPicker.addEventListener('input', (e) => {
-        currentColor = e.target.value;
-        setTool('brush');
-    });
-    brushSizeSlider.addEventListener('input', (e) => {
-        brushSize = parseInt(e.target.value);
-    });
-    undoBtn.addEventListener('click', undoLastAction);
-    clearBtn.addEventListener('click', clearCanvas);
-    
-    // Controles de imagem
-    uploadBtn.addEventListener('click', () => fileInput.click());
+    importBtn.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', handleImageUpload);
-    opacitySlider.addEventListener('input', updateImageStyles);
-    flipCameraBtn.addEventListener('click', flipCamera);
-    rotateBtn.addEventListener('click', rotateImage);
+    fullscreenBtn.addEventListener('click', toggleFullscreen);
+    
+    // Configurações
+    settingsBtn.addEventListener('click', toggleSettings);
+    rotateSlider.addEventListener('input', updateImageTransform);
+    tiltSlider.addEventListener('input', updateImageTransform);
     mirrorBtn.addEventListener('click', mirrorImage);
-    blurBtn.addEventListener('click', toggleBlur);
-    saveBtn.addEventListener('click', saveDrawing);
+    brightnessSlider.addEventListener('input', updateCameraBrightness);
+    flipCameraBtn.addEventListener('click', flipCamera);
+    themeToggle.addEventListener('click', toggleTheme);
     
     // Menu sobre
-    aboutBtn.addEventListener('click', toggleAboutMenu);
-    closeAbout.addEventListener('click', toggleAboutMenu);
+    aboutBtn.addEventListener('click', toggleAbout);
+    closeAbout.addEventListener('click', toggleAbout);
+    
+    // Eventos de tela cheia
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
 }
 
 // Funções da câmera
@@ -133,13 +84,16 @@ async function startCamera() {
     }
 }
 
+function updateCameraBrightness() {
+    brightness = brightnessSlider.value;
+    video.style.filter = `brightness(${brightness}%)`;
+}
+
 function flipCamera() {
     if (!cameraStream) return;
     
-    // Parar a câmera atual
     cameraStream.getTracks().forEach(track => track.stop());
     
-    // Iniciar câmera oposta
     const constraints = {
         video: {
             facingMode: video.srcObject.getVideoTracks()[0].getSettings().facingMode === 'user' ? 'environment' : 'user',
@@ -159,98 +113,6 @@ function flipCamera() {
         });
 }
 
-// Funções de desenho
-function startDrawing(e) {
-    isDrawing = true;
-    [lastX, lastY] = getPosition(e);
-    saveCanvasState();
-}
-
-function draw(e) {
-    if (!isDrawing) return;
-    
-    e.preventDefault();
-    
-    const [x, y] = getPosition(e);
-    
-    ctx.beginPath();
-    ctx.moveTo(lastX, lastY);
-    ctx.lineTo(x, y);
-    ctx.strokeStyle = isErasing ? 'rgba(0,0,0,0)' : currentColor;
-    ctx.lineWidth = brushSize;
-    ctx.globalCompositeOperation = isErasing ? 'destination-out' : 'source-over';
-    ctx.stroke();
-    
-    [lastX, lastY] = [x, y];
-}
-
-function stopDrawing() {
-    isDrawing = false;
-    saveCanvasState();
-}
-
-function getPosition(e) {
-    let x, y;
-    
-    if (e.type.includes('touch')) {
-        const touch = e.touches[0] || e.changedTouches[0];
-        const rect = canvas.getBoundingClientRect();
-        x = touch.clientX - rect.left;
-        y = touch.clientY - rect.top;
-    } else {
-        const rect = canvas.getBoundingClientRect();
-        x = e.clientX - rect.left;
-        y = e.clientY - rect.top;
-    }
-    
-    return [x, y];
-}
-
-function setTool(tool) {
-    isErasing = tool === 'eraser';
-    if (tool === 'brush') {
-        brushBtn.classList.add('active');
-        eraserBtn.classList.remove('active');
-    } else {
-        brushBtn.classList.remove('active');
-        eraserBtn.classList.add('active');
-    }
-}
-
-// Histórico de desenho
-function saveCanvasState() {
-    // Limpa estados futuros se desfez algo e depois desenhou
-    if (currentHistoryIndex < drawingHistory.length - 1) {
-        drawingHistory = drawingHistory.slice(0, currentHistoryIndex + 1);
-    }
-    
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    drawingHistory.push(imageData);
-    currentHistoryIndex = drawingHistory.length - 1;
-    
-    // Limita o histórico para evitar uso excessivo de memória
-    if (drawingHistory.length > 20) {
-        drawingHistory.shift();
-        currentHistoryIndex--;
-    }
-}
-
-function undoLastAction() {
-    if (currentHistoryIndex <= 0) {
-        clearCanvas();
-        return;
-    }
-    
-    currentHistoryIndex--;
-    const imageData = drawingHistory[currentHistoryIndex];
-    ctx.putImageData(imageData, 0, 0);
-}
-
-function clearCanvas() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    saveCanvasState();
-}
-
 // Manipulação de imagem
 function handleImageUpload(e) {
     const file = e.target.files[0];
@@ -263,172 +125,132 @@ function handleImageUpload(e) {
         
         // Resetar transformações
         rotationAngle = 0;
+        tiltAngle = 0;
         isMirrored = false;
-        isBlurred = false;
-        scale = 1;
-        posX = 0;
-        posY = 0;
+        rotateSlider.value = 0;
+        tiltSlider.value = 0;
         
-        updateImageStyles();
+        updateImageTransform();
     };
     reader.readAsDataURL(file);
 }
 
-function updateImageStyles() {
-    const opacity = opacitySlider.value / 100;
+function updateImageTransform() {
+    rotationAngle = rotateSlider.value;
+    tiltAngle = tiltSlider.value;
     
-    importedImage.style.opacity = opacity;
     importedImage.style.transform = `
-        translate(${posX}px, ${posY}px)
-        scale(${scale})
         rotate(${rotationAngle}deg)
+        rotateX(${tiltAngle}deg)
         ${isMirrored ? 'scaleX(-1)' : ''}
     `;
-    importedImage.style.filter = isBlurred ? 'blur(5px)' : 'none';
-    importedImage.style.transition = isBlurred ? 'filter 0.3s ease' : 'none';
-}
-
-function rotateImage() {
-    rotationAngle += 90;
-    if (rotationAngle >= 360) rotationAngle = 0;
-    updateImageStyles();
 }
 
 function mirrorImage() {
     isMirrored = !isMirrored;
-    updateImageStyles();
+    mirrorBtn.classList.toggle('active', isMirrored);
+    updateImageTransform();
 }
 
-function toggleBlur() {
-    isBlurred = !isBlurred;
-    blurBtn.classList.toggle('active', isBlurred);
-    updateImageStyles();
-}
-
-// Manipulação de toque para imagem
-function handleTouchStart(e) {
-    e.preventDefault();
-    touchCount = e.touches.length;
-    
-    if (touchCount === 1 && importedImage.style.display !== 'none') {
-        // Movimento com um dedo
-        const touch = e.touches[0];
-        startX = touch.clientX - posX;
-        startY = touch.clientY - posY;
-    } else if (touchCount === 2 && importedImage.style.display !== 'none') {
-        // Pinça com dois dedos (zoom e rotação)
-        isPinching = true;
-        const touch1 = e.touches[0];
-        const touch2 = e.touches[1];
-        
-        // Calcula distância inicial entre os dedos
-        startDistance = Math.hypot(
-            touch2.clientX - touch1.clientX,
-            touch2.clientY - touch1.clientY
-        );
-        
-        // Calcula ângulo inicial
-        startAngle = Math.atan2(
-            touch2.clientY - touch1.clientY,
-            touch2.clientX - touch1.clientX
-        );
-        
-        startScale = scale;
-        initialAngle = rotationAngle;
+// Tela cheia
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+            console.error("Erro ao entrar em tela cheia:", err);
+        });
+    } else {
+        document.exitFullscreen();
     }
 }
 
-function handleTouchMove(e) {
-    e.preventDefault();
-    
-    if (isPinching && touchCount === 2 && importedImage.style.display !== 'none') {
-        // Pinça com dois dedos (zoom e rotação)
-        const touch1 = e.touches[0];
-        const touch2 = e.touches[1];
-        
-        // Calcula nova distância
-        const currentDistance = Math.hypot(
-            touch2.clientX - touch1.clientX,
-            touch2.clientY - touch1.clientY
-        );
-        
-        // Calcula novo ângulo
-        const currentAngle = Math.atan2(
-            touch2.clientY - touch1.clientY,
-            touch2.clientX - touch1.clientX
-        );
-        
-        // Aplica zoom
-        scale = startScale * (currentDistance / startDistance);
-        
-        // Aplica rotação
-        const angleDiff = currentAngle - startAngle;
-        rotationAngle = initialAngle + angleDiff * (180 / Math.PI);
-        
-        updateImageStyles();
-    } else if (touchCount === 1 && importedImage.style.display !== 'none') {
-        // Movimento com um dedo
-        const touch = e.touches[0];
-        posX = touch.clientX - startX;
-        posY = touch.clientY - startY;
-        updateImageStyles();
+function handleFullscreenChange() {
+    if (document.fullscreenElement) {
+        fullscreenBtn.innerHTML = '<img src="icons/fullscreen-exit.svg" alt="Sair da tela cheia">';
+    } else {
+        fullscreenBtn.innerHTML = '<img src="icons/fullscreen.svg" alt="Tela cheia">';
     }
 }
 
-function handleTouchEnd(e) {
-    e.preventDefault();
-    touchCount = e.touches.length;
+// Tema
+function toggleTheme() {
+    isDarkTheme = !isDarkTheme;
+    document.body.classList.toggle('light-theme', !isDarkTheme);
+    document.body.classList.toggle('dark-theme', isDarkTheme);
     
-    if (touchCount === 0) {
-        isPinching = false;
-    }
+    // Atualizar ícone do tema
+    themeToggle.innerHTML = isDarkTheme ? 
+        '<img src="icons/sun.svg" alt="Tema claro">' : 
+        '<img src="icons/moon.svg" alt="Tema escuro">';
 }
 
-// Salvar desenho
-function saveDrawing() {
-    // Criar um canvas temporário para combinar todas as camadas
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = canvas.width;
-    tempCanvas.height = canvas.height;
-    const tempCtx = tempCanvas.getContext('2d');
+// Painel de configurações
+function toggleSettings() {
+    isSettingsOpen = !isSettingsOpen;
+    settingsPanel.classList.toggle('hidden', !isSettingsOpen);
     
-    // Desenhar a câmera (opcional)
-    // tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
-    
-    // Desenhar a imagem importada (se existir)
-    if (importedImage.style.display !== 'none') {
-        tempCtx.save();
-        tempCtx.translate(tempCanvas.width / 2, tempCanvas.height / 2);
-        tempCtx.scale(scale, scale);
-        tempCtx.rotate(rotationAngle * Math.PI / 180);
-        if (isMirrored) {
-            tempCtx.scale(-1, 1);
-        }
-        tempCtx.globalAlpha = parseFloat(importedImage.style.opacity);
-        tempCtx.drawImage(
-            importedImage,
-            -importedImage.naturalWidth / 2 + posX / scale,
-            -importedImage.naturalHeight / 2 + posY / scale,
-            importedImage.naturalWidth,
-            importedImage.naturalHeight
-        );
-        tempCtx.restore();
+    // Fechar menu sobre se estiver aberto
+    if (isAboutOpen) {
+        isAboutOpen = false;
+        aboutPanel.classList.add('hidden');
     }
-    
-    // Desenhar o canvas de desenho
-    tempCtx.drawImage(canvas, 0, 0);
-    
-    // Criar link de download
-    const link = document.createElement('a');
-    link.download = 'ar-drawing-' + new Date().toISOString().slice(0, 10) + '.png';
-    link.href = tempCanvas.toDataURL('image/png');
-    link.click();
 }
 
 // Menu sobre
-function toggleAboutMenu() {
-    aboutContent.style.display = aboutContent.style.display === 'block' ? 'none' : 'block';
+function toggleAbout() {
+    isAboutOpen = !isAboutOpen;
+    aboutPanel.classList.toggle('hidden', !isAboutOpen);
+    
+    // Fechar configurações se estiver aberto
+    if (isSettingsOpen) {
+        isSettingsOpen = false;
+        settingsPanel.classList.add('hidden');
+    }
 }
+
+// Manipulação de toque para imagem (zoom e movimento)
+let initialDistance = null;
+let initialScale = 1;
+let initialX = 0;
+let initialY = 0;
+
+document.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2 && importedImage.style.display !== 'none') {
+        // Pinça para zoom
+        e.preventDefault();
+        initialDistance = Math.hypot(
+            e.touches[1].clientX - e.touches[0].clientX,
+            e.touches[1].clientY - e.touches[0].clientY
+        );
+        initialScale = parseFloat(importedImage.style.transform.match(/scale\(([^)]+)\)/)?.[1] || 1);
+    } else if (e.touches.length === 1 && importedImage.style.display !== 'none') {
+        // Movimento com um dedo
+        e.preventDefault();
+        initialX = e.touches[0].clientX - parseInt(importedImage.style.left || 0);
+        initialY = e.touches[0].clientY - parseInt(importedImage.style.top || 0);
+    }
+}, { passive: false });
+
+document.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && importedImage.style.display !== 'none' && initialDistance !== null) {
+        // Zoom com pinça
+        e.preventDefault();
+        const currentDistance = Math.hypot(
+            e.touches[1].clientX - e.touches[0].clientX,
+            e.touches[1].clientY - e.touches[0].clientY
+        );
+        const scale = (currentDistance / initialDistance) * initialScale;
+        importedImage.style.transform = `scale(${scale}) ${importedImage.style.transform.replace(/scale\([^)]+\)/, '')}`;
+    } else if (e.touches.length === 1 && importedImage.style.display !== 'none') {
+        // Movimento
+        e.preventDefault();
+        importedImage.style.left = `${e.touches[0].clientX - initialX}px`;
+        importedImage.style.top = `${e.touches[0].clientY - initialY}px`;
+    }
+}, { passive: false });
+
+document.addEventListener('touchend', () => {
+    initialDistance = null;
+});
 
 // Inicializar aplicação
 document.addEventListener('DOMContentLoaded', init);
