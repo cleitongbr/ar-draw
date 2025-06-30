@@ -1,7 +1,5 @@
 // Variáveis globais
 let cameraStream = null;
-let rotationAngle = 0;
-let tiltAngle = 0;
 let isMirrored = false;
 let brightness = 100;
 let currentTheme = 'dark'; // 'dark', 'light' ou 'red'
@@ -12,275 +10,197 @@ let imageScale = 1;
 let imageX = 0;
 let imageY = 0;
 let isBlurEnabled = false;
+let isFullscreen = false;
+let rotateX = 0;
+let rotateY = 0;
+let rotateZ = 0;
+let imageOpacity = 100;
 
 // Elementos DOM
-const loadingScreen = document.getElementById('loading-screen');
-const container = document.querySelector('.container');
-const video = document.getElementById('camera');
-const importedImage = document.getElementById('imported-image');
-const fileInput = document.getElementById('file-input');
-const importBtn = document.getElementById('import-btn');
-const fullscreenBtn = document.getElementById('fullscreen-btn');
-const minimizeBtn = document.getElementById('minimize-btn');
-const settingsBtn = document.getElementById('settings-btn');
-const fsSettingsBtn = document.getElementById('fs-settings-btn');
-const fsAboutBtn = document.getElementById('fs-about-btn');
-const settingsPanel = document.getElementById('settings-panel');
-const rotateSlider = document.getElementById('rotate-slider');
-const tiltSlider = document.getElementById('tilt-slider');
-const mirrorBtn = document.getElementById('mirror-btn');
-const rotateLeftBtn = document.getElementById('rotate-left-btn');
-const rotateRightBtn = document.getElementById('rotate-right-btn');
-const brightnessSlider = document.getElementById('brightness-slider');
-const flipCameraBtn = document.getElementById('flip-camera-btn');
-const blurToggle = document.getElementById('blur-toggle');
-const flashBtn = document.getElementById('flash-btn');
-const themeToggle = document.getElementById('theme-toggle');
-const redThemeBtn = document.getElementById('red-theme-btn');
-const aboutBtn = document.getElementById('about-toggle');
-const aboutPanel = document.getElementById('about-panel');
-const fullscreenControls = document.getElementById('fullscreen-controls');
+const elements = {
+    loadingScreen: document.getElementById('loading-screen'),
+    container: document.querySelector('.container'),
+    video: document.getElementById('camera'),
+    importedImage: document.getElementById('imported-image'),
+    fileInput: document.getElementById('file-input'),
+    importBtn: document.getElementById('import-btn'),
+    fullscreenBtn: document.getElementById('fullscreen-btn'),
+    minimizeBtn: document.getElementById('minimize-btn'),
+    settingsBtn: document.getElementById('settings-btn'),
+    fsSettingsBtn: document.getElementById('fs-settings-btn'),
+    fsAboutBtn: document.getElementById('fs-about-btn'),
+    settingsPanel: document.getElementById('settings-panel'),
+    rotateXSlider: document.getElementById('rotate-x-slider'),
+    rotateYSlider: document.getElementById('rotate-y-slider'),
+    rotateZSlider: document.getElementById('rotate-z-slider'),
+    opacitySlider: document.getElementById('opacity-slider'),
+    resetRotateXBtn: document.getElementById('reset-rotate-x-btn'),
+    resetRotateYBtn: document.getElementById('reset-rotate-y-btn'),
+    resetRotateZBtn: document.getElementById('reset-rotate-z-btn'),
+    resetOpacityBtn: document.getElementById('reset-opacity-btn'),
+    resetBrightnessBtn: document.getElementById('reset-brightness-btn'),
+    mirrorBtn: document.getElementById('mirror-btn'),
+    brightnessSlider: document.getElementById('brightness-slider'),
+    flipCameraBtn: document.getElementById('flip-camera-btn'),
+    flashBtn: document.getElementById('flash-btn'),
+    themeToggle: document.getElementById('theme-toggle'),
+    aboutToggle: document.getElementById('about-toggle'),
+    aboutPanel: document.getElementById('about-panel'),
+    closeAboutBtn: document.getElementById('close-about-btn'),
+    fullscreenControls: document.getElementById('fullscreen-controls')
+};
 
 // Inicialização
 function init() {
     setTimeout(() => {
-        loadingScreen.classList.add('hidden');
-        container.classList.remove('hidden');
+        elements.loadingScreen.classList.add('hidden');
+        elements.container.classList.remove('hidden');
         startCamera();
-    }, 3000);
+    }, 1500);
     
     setupEventListeners();
+    initSettings();
     
-    // Configurações iniciais
-    brightnessSlider.value = brightness;
-    rotateSlider.value = rotationAngle;
-    tiltSlider.value = tiltAngle;
+    // Verifica suporte a tela cheia
+    if (!document.fullscreenEnabled) {
+        elements.fullscreenBtn.style.display = 'none';
+    }
+}
+
+function initSettings() {
+    elements.brightnessSlider.value = brightness;
+    elements.rotateXSlider.value = rotateX;
+    elements.rotateYSlider.value = rotateY;
+    elements.rotateZSlider.value = rotateZ;
+    elements.opacitySlider.value = imageOpacity;
 }
 
 // Configurar listeners de eventos
 function setupEventListeners() {
-    // Controles
-    if (importBtn) importBtn.addEventListener('click', () => fileInput.click());
-    if (fileInput) fileInput.addEventListener('change', handleImageUpload);
-    if (fullscreenBtn) fullscreenBtn.addEventListener('click', toggleFullscreen);
-    if (minimizeBtn) minimizeBtn.addEventListener('click', toggleFullscreen);
-
-    // Configurações
-    if (settingsBtn) settingsBtn.addEventListener('click', toggleSettings);
-    if (fsSettingsBtn) fsSettingsBtn.addEventListener('click', toggleSettings);
-    if (rotateSlider) rotateSlider.addEventListener('input', updateImageTransform);
-    if (tiltSlider) tiltSlider.addEventListener('input', updateImageTransform);
-    if (mirrorBtn) mirrorBtn.addEventListener('click', mirrorImage);
-    if (rotateLeftBtn) rotateLeftBtn.addEventListener('click', () => rotateImage(-90));
-    if (rotateRightBtn) rotateRightBtn.addEventListener('click', () => rotateImage(90));
-    if (brightnessSlider) brightnessSlider.addEventListener('input', updateCameraBrightness);
-    if (flipCameraBtn) flipCameraBtn.addEventListener('click', flipCamera);
-    if (blurToggle) blurToggle.addEventListener('click', toggleBlur);
-    if (flashBtn) flashBtn.addEventListener('click', toggleFlash);
-    if (themeToggle) themeToggle.addEventListener('click', () => setTheme(currentTheme === 'light' ? 'dark' : 'light'));
-    if (redThemeBtn) redThemeBtn.addEventListener('click', () => setTheme('red'));
-
-    // Menu sobre
-    if (aboutBtn) aboutBtn.addEventListener('click', toggleAbout);
-    if (fsAboutBtn) fsAboutBtn.addEventListener('click', toggleAbout);
-
+    // Controles de imagem
+    elements.importBtn?.addEventListener('click', () => elements.fileInput.click());
+    elements.fileInput?.addEventListener('change', handleImageUpload);
+    
+    // Controles de câmera
+    elements.flipCameraBtn?.addEventListener('click', flipCamera);
+    elements.flashBtn?.addEventListener('click', toggleFlash);
+    elements.brightnessSlider?.addEventListener('input', updateCameraBrightness);
+    elements.resetBrightnessBtn?.addEventListener('click', () => {
+        brightness = 100;
+        elements.brightnessSlider.value = 100;
+        updateCameraBrightness();
+    });
+    
+    // Transformações de imagem
+    elements.rotateXSlider?.addEventListener('input', updateImageTransform);
+    elements.rotateYSlider?.addEventListener('input', updateImageTransform);
+    elements.rotateZSlider?.addEventListener('input', updateImageTransform);
+    elements.opacitySlider?.addEventListener('input', updateImageTransform);
+    elements.mirrorBtn?.addEventListener('click', mirrorImage);
+    
+    // Botões de reset
+    elements.resetRotateXBtn?.addEventListener('click', () => {
+        rotateX = 0;
+        elements.rotateXSlider.value = 0;
+        updateImageTransform();
+    });
+    elements.resetRotateYBtn?.addEventListener('click', () => {
+        rotateY = 0;
+        elements.rotateYSlider.value = 0;
+        updateImageTransform();
+    });
+    elements.resetRotateZBtn?.addEventListener('click', () => {
+        rotateZ = 0;
+        elements.rotateZSlider.value = 0;
+        updateImageTransform();
+    });
+    elements.resetOpacityBtn?.addEventListener('click', () => {
+        imageOpacity = 100;
+        elements.opacitySlider.value = 100;
+        updateImageTransform();
+    });
+    
+    // Tela cheia
+    elements.fullscreenBtn?.addEventListener('click', toggleFullscreen);
+    elements.minimizeBtn?.addEventListener('click', toggleFullscreen);
+    
+    // Temas e efeitos
+    elements.themeToggle?.addEventListener('click', toggleTheme);
+    
+    // Painéis
+    elements.settingsBtn?.addEventListener('click', toggleSettings);
+    elements.fsSettingsBtn?.addEventListener('click', toggleSettings);
+    elements.aboutToggle?.addEventListener('click', toggleAbout);
+    elements.fsAboutBtn?.addEventListener('click', toggleAbout);
+    elements.closeAboutBtn?.addEventListener('click', toggleAbout);
+    
     // Eventos de tela cheia
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-
+    
     // Eventos de toque para a imagem
-    if (importedImage) importedImage.addEventListener('touchstart', handleTouchStart, { passive: false });
-    document.addEventListener('touchmove', handleTouchMove, { passive: false });
-    document.addEventListener('touchend', handleTouchEnd);
-}
-
-// Funções da câmera
-async function startCamera() {
-    try {
-        const constraints = {
-            video: {
-                facingMode: 'environment',
-                width: { ideal: 1920 },
-                height: { ideal: 1080 }
-            }
-        };
-        
-        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-        video.srcObject = cameraStream;
-        video.play().then(() => {
-            // Verifica se o dispositivo suporta flash
-            if ('torch' in cameraStream.getVideoTracks()[0].getCapabilities()) {
-                flashBtn.style.display = 'flex';
-            }
-        });
-    } catch (err) {
-        console.error("Erro ao acessar a câmera:", err);
-        alert("Não foi possível acessar a câmera. Por favor, verifique as permissões.");
-    }
-}
-
-async function toggleFlash() {
-    if (!cameraStream) return;
+    setupTouchEvents();
     
-    const track = cameraStream.getVideoTracks()[0];
-    try {
-        if (isFlashOn) {
-            await track.applyConstraints({ advanced: [{ torch: false }] });
-            flashBtn.classList.remove('active');
-        } else {
-            await track.applyConstraints({ advanced: [{ torch: true }] });
-            flashBtn.classList.add('active');
+    // Fechar painéis ao clicar fora
+    document.addEventListener('click', handleClickOutside);
+}
+
+function setupTouchEvents() {
+    let initialDistance = null;
+    let initialScale = 1;
+    let initialX = 0;
+    let initialY = 0;
+    let initialAngle = 0;
+
+    elements.importedImage?.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            initialDistance = getDistance(e.touches[0], e.touches[1]);
+            initialScale = imageScale;
+            initialAngle = getAngle(e.touches[0], e.touches[1]);
+        } else if (e.touches.length === 1) {
+            e.preventDefault();
+            initialX = e.touches[0].clientX - imageX;
+            initialY = e.touches[0].clientY - imageY;
         }
-        isFlashOn = !isFlashOn;
-    } catch (err) {
-        console.error("Erro ao alternar flash:", err);
-        alert("Seu dispositivo não suporta flash ou ocorreu um erro.");
-    }
-}
+    }, { passive: false });
 
-function updateCameraBrightness() {
-    brightness = brightnessSlider.value;
-    video.style.filter = `brightness(${brightness}%)`;
-}
-
-async function flipCamera() {
-    if (!cameraStream) return;
-    
-    // Desligar flash se estiver ligado
-    if (isFlashOn) {
-        await toggleFlash();
-    }
-    
-    cameraStream.getTracks().forEach(track => track.stop());
-    
-    const constraints = {
-        video: {
-            facingMode: video.srcObject.getVideoTracks()[0].getSettings().facingMode === 'user' ? 'environment' : 'user',
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
-        }
-    };
-    
-    try {
-        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-        video.srcObject = cameraStream;
-        video.play().then(() => {
-            // Verifica se o dispositivo suporta flash
-            if ('torch' in cameraStream.getVideoTracks()[0].getCapabilities()) {
-                flashBtn.style.display = 'flex';
-            } else {
-                flashBtn.style.display = 'none';
+    document.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2 && initialDistance !== null) {
+            e.preventDefault();
+            const currentDistance = getDistance(e.touches[0], e.touches[1]);
+            const currentAngle = getAngle(e.touches[0], e.touches[1]);
+            
+            imageScale = (currentDistance / initialDistance) * initialScale;
+            
+            if (Math.abs(currentAngle - initialAngle) > 5) {
+                rotateZ += (currentAngle - initialAngle) * 0.5;
+                elements.rotateZSlider.value = rotateZ;
+                initialAngle = currentAngle;
             }
-        });
-    } catch (err) {
-        console.error("Erro ao alternar câmera:", err);
-    }
-}
-
-// Manipulação de imagem
-function handleImageUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        importedImage.src = event.target.result;
-        importedImage.style.display = 'block';
-        
-        // Resetar transformações
-        rotationAngle = 0;
-        tiltAngle = 0;
-        isMirrored = false;
-        imageScale = 1;
-        imageX = 0;
-        imageY = 0;
-        
-        rotateSlider.value = 0;
-        tiltSlider.value = 0;
-        
-        updateImageTransform();
-    };
-    reader.readAsDataURL(file);
-}
-
-// Funções de rotação por botão
-function rotateImage(degrees) {
-    rotationAngle += degrees;
-    if (rotationAngle > 180) rotationAngle -= 360;
-    if (rotationAngle < -180) rotationAngle += 360;
-    rotateSlider.value = rotationAngle;
-    updateImageTransform();
-}
-
-function updateImageTransform() {
-    rotationAngle = parseInt(rotateSlider.value);
-    tiltAngle = parseInt(tiltSlider.value);
-    
-    importedImage.style.transform = `
-        translate(${imageX}px, ${imageY}px)
-        scale(${imageScale})
-        rotate(${rotationAngle}deg)
-        rotateX(${tiltAngle}deg)
-        ${isMirrored ? 'scaleX(-1)' : ''}
-    `;
-}
-
-function mirrorImage() {
-    isMirrored = !isMirrored;
-    mirrorBtn.classList.toggle('active', isMirrored);
-    updateImageTransform();
-}
-
-// Manipulação de toque para imagem
-let initialDistance = null;
-let initialScale = 1;
-let initialX = 0;
-let initialY = 0;
-let initialAngle = 0;
-
-function handleTouchStart(e) {
-    if (e.touches.length === 2) {
-        // Pinça para zoom/rotação
-        e.preventDefault();
-        initialDistance = getDistance(e.touches[0], e.touches[1]);
-        initialScale = imageScale;
-        initialAngle = getAngle(e.touches[0], e.touches[1]);
-    } else if (e.touches.length === 1) {
-        // Movimento com um dedo
-        e.preventDefault();
-        initialX = e.touches[0].clientX - imageX;
-        initialY = e.touches[0].clientY - imageY;
-    }
-}
-
-function handleTouchMove(e) {
-    if (e.touches.length === 2 && initialDistance !== null) {
-        // Zoom/rotação com pinça
-        e.preventDefault();
-        const currentDistance = getDistance(e.touches[0], e.touches[1]);
-        const currentAngle = getAngle(e.touches[0], e.touches[1]);
-        
-        // Zoom
-        imageScale = (currentDistance / initialDistance) * initialScale;
-        
-        // Rotação (se o ângulo mudou significativamente)
-        if (Math.abs(currentAngle - initialAngle) > 5) {
-            rotationAngle += (currentAngle - initialAngle) * 0.5;
-            rotateSlider.value = rotationAngle;
-            initialAngle = currentAngle;
+            
+            updateImageTransform();
+        } else if (e.touches.length === 1) {
+            e.preventDefault();
+            imageX = e.touches[0].clientX - initialX;
+            imageY = e.touches[0].clientY - initialY;
+            updateImageTransform();
         }
-        
-        updateImageTransform();
-    } else if (e.touches.length === 1) {
-        // Movimento
-        e.preventDefault();
-        imageX = e.touches[0].clientX - initialX;
-        imageY = e.touches[0].clientY - initialY;
-        updateImageTransform();
-    }
+    }, { passive: false });
+
+    document.addEventListener('touchend', () => {
+        initialDistance = null;
+    });
 }
 
-function handleTouchEnd() {
-    initialDistance = null;
+function handleClickOutside(e) {
+    if (isSettingsOpen && !elements.settingsPanel.contains(e.target) && 
+        e.target !== elements.settingsBtn && e.target !== elements.fsSettingsBtn) {
+        toggleSettings();
+    }
+    if (isAboutOpen && !elements.aboutPanel.contains(e.target) && 
+        e.target !== elements.aboutToggle && e.target !== elements.fsAboutBtn) {
+        toggleAbout();
+    }
 }
 
 function getDistance(touch1, touch2) {
@@ -297,90 +217,211 @@ function getAngle(touch1, touch2) {
     ) * 180 / Math.PI;
 }
 
-// Tema
-function setTheme(theme) {
-    document.body.classList.remove('dark-theme', 'light-theme', 'red-theme');
-    document.body.classList.add(theme + '-theme');
-    currentTheme = theme;
-
-    if (theme === 'dark') {
-        themeToggle.innerHTML = '<img src="icons/sun.svg" alt="Tema claro">';
-        if (redThemeBtn) redThemeBtn.innerHTML = '<img src="icons/theme-red.svg" alt="Tema vermelho">';
-    } else if (theme === 'light') {
-        themeToggle.innerHTML = '<img src="icons/moon.svg" alt="Tema escuro">';
-        if (redThemeBtn) redThemeBtn.innerHTML = '<img src="icons/theme-red.svg" alt="Tema vermelho">';
-    } else if (theme === 'red') {
-        themeToggle.innerHTML = '<img src="icons/sun.svg" alt="Tema claro">';
-        if (redThemeBtn) redThemeBtn.innerHTML = '<img src="icons/theme-dark.svg" alt="Tema escuro">';
+// Funções da câmera
+async function startCamera() {
+    try {
+        const constraints = {
+            video: {
+                facingMode: 'environment',
+                width: { ideal: 1920 },
+                height: { ideal: 1080 }
+            }
+        };
+        
+        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+        elements.video.srcObject = cameraStream;
+        
+        await elements.video.play();
+        
+        // Verifica se o dispositivo suporta flash
+        const track = cameraStream.getVideoTracks()[0];
+        if (track.getCapabilities().torch) {
+            elements.flashBtn.style.display = 'flex';
+        }
+    } catch (err) {
+        console.error("Erro ao acessar a câmera:", err);
+        showError("Não foi possível acessar a câmera. Verifique as permissões.");
     }
 }
 
-// Blur
-function toggleBlur() {
-    isBlurEnabled = !isBlurEnabled;
-    blurToggle.classList.toggle('active', isBlurEnabled);
+async function toggleFlash() {
+    if (!cameraStream) return;
+    
+    const track = cameraStream.getVideoTracks()[0];
+    try {
+        await track.applyConstraints({ advanced: [{ torch: !isFlashOn }] });
+        isFlashOn = !isFlashOn;
+        elements.flashBtn.classList.toggle('active', isFlashOn);
+    } catch (err) {
+        console.error("Erro ao alternar flash:", err);
+        showError("Seu dispositivo não suporta flash ou ocorreu um erro.");
+    }
+}
 
-    document.querySelectorAll('.settings-group, .about-content').forEach(el => {
-        el.style.backdropFilter = isBlurEnabled ? 'blur(10px)' : 'none';
-    });
+function updateCameraBrightness() {
+    brightness = elements.brightnessSlider.value;
+    elements.video.style.filter = `brightness(${brightness}%)`;
+}
+
+async function flipCamera() {
+    if (!cameraStream) return;
+    
+    if (isFlashOn) await toggleFlash();
+    
+    cameraStream.getTracks().forEach(track => track.stop());
+    
+    const constraints = {
+        video: {
+            facingMode: elements.video.srcObject.getVideoTracks()[0].getSettings().facingMode === 'user' ? 'environment' : 'user',
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+        }
+    };
+    
+    try {
+        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+        elements.video.srcObject = cameraStream;
+        await elements.video.play();
+        
+        const track = cameraStream.getVideoTracks()[0];
+        elements.flashBtn.style.display = track.getCapabilities().torch ? 'flex' : 'none';
+    } catch (err) {
+        console.error("Erro ao alternar câmera:", err);
+        showError("Não foi possível alternar a câmera.");
+    }
+}
+
+// Manipulação de imagem
+function handleImageUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        elements.importedImage.src = event.target.result;
+        elements.importedImage.style.display = 'block';
+        resetImageTransformations();
+    };
+    reader.readAsDataURL(file);
+}
+
+function resetImageTransformations() {
+    rotateX = 0;
+    rotateY = 0;
+    rotateZ = 0;
+    imageScale = 1;
+    imageX = 0;
+    imageY = 0;
+    imageOpacity = 100;
+    isMirrored = false;
+    
+    elements.rotateXSlider.value = 0;
+    elements.rotateYSlider.value = 0;
+    elements.rotateZSlider.value = 0;
+    elements.opacitySlider.value = 100;
+    elements.mirrorBtn.classList.remove('active');
+    
+    updateImageTransform();
+}
+
+function updateImageTransform() {
+    rotateX = parseInt(elements.rotateXSlider.value);
+    rotateY = parseInt(elements.rotateYSlider.value);
+    rotateZ = parseInt(elements.rotateZSlider.value);
+    imageOpacity = parseInt(elements.opacitySlider.value);
+    
+    elements.importedImage.style.transform = `
+        translate(${imageX}px, ${imageY}px)
+        scale(${imageScale})
+        rotateX(${rotateX}deg)
+        rotateY(${rotateY}deg)
+        rotateZ(${rotateZ}deg)
+        ${isMirrored ? 'scaleX(-1)' : ''}
+    `;
+    
+    elements.importedImage.style.opacity = `${imageOpacity}%`;
+}
+
+function mirrorImage() {
+    isMirrored = !isMirrored;
+    elements.mirrorBtn.classList.toggle('active', isMirrored);
+    updateImageTransform();
+}
+
+// Tema
+function toggleTheme() {
+    const themes = ['dark', 'light', 'red'];
+    const currentIndex = themes.indexOf(currentTheme);
+    const nextTheme = themes[(currentIndex + 1) % themes.length];
+    setTheme(nextTheme);
+}
+
+function setTheme(theme) {
+    document.body.classList.remove('dark-theme', 'light-theme', 'red-theme');
+    document.body.classList.add(`${theme}-theme`);
+    currentTheme = theme;
+
+    const iconMap = {
+        dark: { icon: 'sun.svg', alt: 'Tema claro' },
+        light: { icon: 'moon.svg', alt: 'Tema escuro' },
+        red: { icon: 'sun.svg', alt: 'Tema claro' }
+    };
+    
+    elements.themeToggle.innerHTML = `<img src="icons/${iconMap[theme].icon}" alt="${iconMap[theme].alt}">`;
 }
 
 // Tela cheia
-function toggleFullscreen() {
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(err => {
-            console.error("Erro ao entrar em tela cheia:", err);
-        });
-    } else {
-        document.exitFullscreen();
+async function toggleFullscreen() {
+    try {
+        if (!document.fullscreenElement) {
+            await document.documentElement.requestFullscreen();
+            isFullscreen = true;
+        } else {
+            await document.exitFullscreen();
+            isFullscreen = false;
+        }
+    } catch (err) {
+        console.error("Erro ao alternar tela cheia:", err);
+        showError("Seu navegador não suporta tela cheia ou ocorreu um erro.");
     }
 }
 
 function handleFullscreenChange() {
-    if (document.fullscreenElement) {
-        if (fullscreenControls) fullscreenControls.classList.remove('hidden');
-        fullscreenBtn.classList.add('hidden');
-        settingsBtn.classList.add('hidden');
-        aboutBtn.classList.add('hidden');
+    isFullscreen = !!document.fullscreenElement;
+    
+    if (isFullscreen) {
+        elements.fullscreenControls?.classList.remove('hidden');
+        elements.fullscreenBtn?.classList.add('hidden');
+        elements.settingsBtn?.classList.add('hidden');
+        elements.aboutToggle?.classList.add('hidden');
     } else {
-        if (fullscreenControls) fullscreenControls.classList.add('hidden');
-        fullscreenBtn.classList.remove('hidden');
-        settingsBtn.classList.remove('hidden');
-        aboutBtn.classList.remove('hidden');
+        elements.fullscreenControls?.classList.add('hidden');
+        elements.fullscreenBtn?.classList.remove('hidden');
+        elements.settingsBtn?.classList.remove('hidden');
+        elements.aboutToggle?.classList.remove('hidden');
     }
 }
 
-// Painel de configurações
+// Painéis
 function toggleSettings() {
     isSettingsOpen = !isSettingsOpen;
-    settingsPanel.classList.toggle('hidden', !isSettingsOpen);
-
-    // Fechar menu sobre se estiver aberto
-    if (isAboutOpen) {
-        isAboutOpen = false;
-        aboutPanel.classList.add('hidden');
-    }
-
-    // Acessibilidade: foco no painel ao abrir
-    if (isSettingsOpen) {
-        settingsPanel.focus?.();
-    }
+    elements.settingsPanel.classList.toggle('hidden', !isSettingsOpen);
+    
+    if (isAboutOpen) toggleAbout();
+    if (isSettingsOpen) elements.settingsPanel.focus();
 }
 
 function toggleAbout() {
     isAboutOpen = !isAboutOpen;
-    aboutPanel.classList.toggle('hidden', !isAboutOpen);
+    elements.aboutPanel.classList.toggle('hidden', !isAboutOpen);
+    
+    if (isSettingsOpen) toggleSettings();
+    if (isAboutOpen) elements.aboutPanel.focus();
+}
 
-    // Fechar configurações se estiver aberto
-    if (isSettingsOpen) {
-        isSettingsOpen = false;
-        settingsPanel.classList.add('hidden');
-    }
-
-    // Acessibilidade: foco no painel ao abrir
-    if (isAboutOpen) {
-        aboutPanel.focus?.();
-    }
+// Utilitários
+function showError(message) {
+    alert(message);
 }
 
 // Inicializar aplicação
