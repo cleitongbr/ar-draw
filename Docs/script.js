@@ -4,13 +4,14 @@ let rotationAngle = 0;
 let tiltAngle = 0;
 let isMirrored = false;
 let brightness = 100;
-let isDarkTheme = true;
+let currentTheme = 'dark'; // 'dark', 'light' ou 'red'
 let isSettingsOpen = false;
 let isAboutOpen = false;
 let isFlashOn = false;
 let imageScale = 1;
 let imageX = 0;
 let imageY = 0;
+let isBlurEnabled = false;
 
 // Elementos DOM
 const loadingScreen = document.getElementById('loading-screen');
@@ -20,27 +21,33 @@ const importedImage = document.getElementById('imported-image');
 const fileInput = document.getElementById('file-input');
 const importBtn = document.getElementById('import-btn');
 const fullscreenBtn = document.getElementById('fullscreen-btn');
+const minimizeBtn = document.getElementById('minimize-btn');
 const settingsBtn = document.getElementById('settings-btn');
+const fsSettingsBtn = document.getElementById('fs-settings-btn');
+const fsAboutBtn = document.getElementById('fs-about-btn');
 const settingsPanel = document.getElementById('settings-panel');
 const rotateSlider = document.getElementById('rotate-slider');
 const tiltSlider = document.getElementById('tilt-slider');
 const mirrorBtn = document.getElementById('mirror-btn');
+const rotateLeftBtn = document.getElementById('rotate-left-btn');
+const rotateRightBtn = document.getElementById('rotate-right-btn');
 const brightnessSlider = document.getElementById('brightness-slider');
 const flipCameraBtn = document.getElementById('flip-camera-btn');
+const blurToggle = document.getElementById('blur-toggle');
 const flashBtn = document.getElementById('flash-btn');
 const themeToggle = document.getElementById('theme-toggle');
-const aboutBtn = document.getElementById('about-btn');
+const redThemeBtn = document.getElementById('red-theme-btn');
+const aboutBtn = document.getElementById('about-toggle');
 const aboutPanel = document.getElementById('about-panel');
-const closeAbout = document.getElementById('close-about');
+const fullscreenControls = document.getElementById('fullscreen-controls');
 
 // Inicialização
 function init() {
-    // Mostrar tela de carregamento por 2 segundos
     setTimeout(() => {
         loadingScreen.classList.add('hidden');
         container.classList.remove('hidden');
         startCamera();
-    }, 2000);
+    }, 3000);
     
     setupEventListeners();
     
@@ -56,24 +63,30 @@ function setupEventListeners() {
     importBtn.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', handleImageUpload);
     fullscreenBtn.addEventListener('click', toggleFullscreen);
-    
+    if (minimizeBtn) minimizeBtn.addEventListener('click', toggleFullscreen);
+
     // Configurações
     settingsBtn.addEventListener('click', toggleSettings);
+    if (fsSettingsBtn) fsSettingsBtn.addEventListener('click', toggleSettings);
     rotateSlider.addEventListener('input', updateImageTransform);
     tiltSlider.addEventListener('input', updateImageTransform);
     mirrorBtn.addEventListener('click', mirrorImage);
+    if (rotateLeftBtn) rotateLeftBtn.addEventListener('click', () => rotateImage(-90));
+    if (rotateRightBtn) rotateRightBtn.addEventListener('click', () => rotateImage(90));
     brightnessSlider.addEventListener('input', updateCameraBrightness);
     flipCameraBtn.addEventListener('click', flipCamera);
+    if (blurToggle) blurToggle.addEventListener('click', toggleBlur);
     flashBtn.addEventListener('click', toggleFlash);
-    themeToggle.addEventListener('click', toggleTheme);
-    
+    themeToggle.addEventListener('click', () => setTheme(currentTheme === 'light' ? 'dark' : 'light'));
+    if (redThemeBtn) redThemeBtn.addEventListener('click', () => setTheme('red'));
+
     // Menu sobre
     aboutBtn.addEventListener('click', toggleAbout);
-    closeAbout.addEventListener('click', toggleAbout);
-    
+    if (fsAboutBtn) fsAboutBtn.addEventListener('click', toggleAbout);
+
     // Eventos de tela cheia
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    
+
     // Eventos de toque para a imagem
     importedImage.addEventListener('touchstart', handleTouchStart, { passive: false });
     document.addEventListener('touchmove', handleTouchMove, { passive: false });
@@ -100,10 +113,29 @@ async function startCamera() {
             }
         });
     } catch (err) {
-        console.error("Erro ao acessar a câmera:", err);
-        alert("Não foi possível acessar a câmera. Por favor, verifique as permissões.");
+    console.error("Erro ao acessar a câmera:", err);
+    alert("Não foi possível acessar a câmera. Por favor, verifique as permissões.");
+
+// Força a remoção das permissões anteriores antes de recarregar
+    if (navigator.permissions) {
+        navigator.permissions.query({name: 'camera'}).then(permissionStatus => {
+            permissionStatus.onchange = () => {
+                // Quando as permissões mudarem, recarrega a página
+                window.location.reload();
+            };
+        // Revoga o acesso anterior (nem todos os navegadores suportam)
+            if (permissionStatus.state === 'granted' && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                const tracks = ;
+                tracks.forEach(track => track.stop());
+            }
+        });
     }
-}
+
+// Recarrega após um pequeno delay para dar tempo de revogar as permissões
+        setTimeout(() => {
+            window.location.reload();
+        }, 500);
+    }
 
 async function toggleFlash() {
     if (!cameraStream) return;
@@ -189,9 +221,18 @@ function handleImageUpload(e) {
     reader.readAsDataURL(file);
 }
 
+// Funções de rotação por botão
+function rotateImage(degrees) {
+    rotationAngle += degrees;
+    if (rotationAngle > 180) rotationAngle -= 360;
+    if (rotationAngle < -180) rotationAngle += 360;
+    rotateSlider.value = rotationAngle;
+    updateImageTransform();
+}
+
 function updateImageTransform() {
-    rotationAngle = rotateSlider.value;
-    tiltAngle = tiltSlider.value;
+    rotationAngle = parseInt(rotateSlider.value);
+    tiltAngle = parseInt(tiltSlider.value);
     
     importedImage.style.transform = `
         translate(${imageX}px, ${imageY}px)
@@ -275,6 +316,34 @@ function getAngle(touch1, touch2) {
     ) * 180 / Math.PI;
 }
 
+// Tema
+function setTheme(theme) {
+    document.body.classList.remove('dark-theme', 'light-theme', 'red-theme');
+    document.body.classList.add(theme + '-theme');
+    currentTheme = theme;
+
+    if (theme === 'dark') {
+        themeToggle.innerHTML = '<img src="icons/sun.svg" alt="Tema claro">';
+        if (redThemeBtn) redThemeBtn.innerHTML = '<img src="icons/theme-red.svg" alt="Tema vermelho">';
+    } else if (theme === 'light') {
+        themeToggle.innerHTML = '<img src="icons/moon.svg" alt="Tema escuro">';
+        if (redThemeBtn) redThemeBtn.innerHTML = '<img src="icons/theme-red.svg" alt="Tema vermelho">';
+    } else if (theme === 'red') {
+        themeToggle.innerHTML = '<img src="icons/sun.svg" alt="Tema claro">';
+        if (redThemeBtn) redThemeBtn.innerHTML = '<img src="icons/theme-dark.svg" alt="Tema escuro">';
+    }
+}
+
+// Blur
+function toggleBlur() {
+    isBlurEnabled = !isBlurEnabled;
+    blurToggle.classList.toggle('active', isBlurEnabled);
+
+    document.querySelectorAll('.settings-group, .about-content').forEach(el => {
+        el.style.backdropFilter = isBlurEnabled ? 'blur(10px)' : 'none';
+    });
+}
+
 // Tela cheia
 function toggleFullscreen() {
     if (!document.fullscreenElement) {
@@ -288,45 +357,48 @@ function toggleFullscreen() {
 
 function handleFullscreenChange() {
     if (document.fullscreenElement) {
-        fullscreenBtn.innerHTML = '<img src="icons/fullscreen-exit.svg" alt="Sair da tela cheia">';
+        if (fullscreenControls) fullscreenControls.classList.remove('hidden');
+        fullscreenBtn.classList.add('hidden');
+        settingsBtn.classList.add('hidden');
+        aboutBtn.classList.add('hidden');
     } else {
-        fullscreenBtn.innerHTML = '<img src="icons/fullscreen.svg" alt="Tela cheia">';
+        if (fullscreenControls) fullscreenControls.classList.add('hidden');
+        fullscreenBtn.classList.remove('hidden');
+        settingsBtn.classList.remove('hidden');
+        aboutBtn.classList.remove('hidden');
     }
-}
-
-// Tema
-function toggleTheme() {
-    isDarkTheme = !isDarkTheme;
-    document.body.classList.toggle('light-theme', !isDarkTheme);
-    document.body.classList.toggle('dark-theme', isDarkTheme);
-    
-    // Atualizar ícone do tema
-    themeToggle.innerHTML = isDarkTheme ? 
-        '<img src="icons/sun.svg" alt="Tema claro">' : 
-        '<img src="icons/moon.svg" alt="Tema escuro">';
 }
 
 // Painel de configurações
 function toggleSettings() {
     isSettingsOpen = !isSettingsOpen;
     settingsPanel.classList.toggle('hidden', !isSettingsOpen);
-    
+
     // Fechar menu sobre se estiver aberto
     if (isAboutOpen) {
         isAboutOpen = false;
         aboutPanel.classList.add('hidden');
     }
+
+    // Acessibilidade: foco no painel ao abrir
+    if (isSettingsOpen) {
+        settingsPanel.focus?.();
+    }
 }
 
-// Menu sobre
 function toggleAbout() {
     isAboutOpen = !isAboutOpen;
     aboutPanel.classList.toggle('hidden', !isAboutOpen);
-    
+
     // Fechar configurações se estiver aberto
     if (isSettingsOpen) {
         isSettingsOpen = false;
         settingsPanel.classList.add('hidden');
+    }
+
+    // Acessibilidade: foco no painel ao abrir
+    if (isAboutOpen) {
+        aboutPanel.focus?.();
     }
 }
 
