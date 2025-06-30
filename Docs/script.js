@@ -47,7 +47,7 @@ function init() {
         loadingScreen.classList.add('hidden');
         container.classList.remove('hidden');
         startCamera();
-    }, 0);
+    }, 3000);
     
     setupEventListeners();
     
@@ -60,35 +60,35 @@ function init() {
 // Configurar listeners de eventos
 function setupEventListeners() {
     // Controles
-    importBtn.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', handleImageUpload);
-    fullscreenBtn.addEventListener('click', toggleFullscreen);
+    if (importBtn) importBtn.addEventListener('click', () => fileInput.click());
+    if (fileInput) fileInput.addEventListener('change', handleImageUpload);
+    if (fullscreenBtn) fullscreenBtn.addEventListener('click', toggleFullscreen);
     if (minimizeBtn) minimizeBtn.addEventListener('click', toggleFullscreen);
 
     // Configurações
-    settingsBtn.addEventListener('click', toggleSettings);
+    if (settingsBtn) settingsBtn.addEventListener('click', toggleSettings);
     if (fsSettingsBtn) fsSettingsBtn.addEventListener('click', toggleSettings);
-    rotateSlider.addEventListener('input', updateImageTransform);
-    tiltSlider.addEventListener('input', updateImageTransform);
-    mirrorBtn.addEventListener('click', mirrorImage);
+    if (rotateSlider) rotateSlider.addEventListener('input', updateImageTransform);
+    if (tiltSlider) tiltSlider.addEventListener('input', updateImageTransform);
+    if (mirrorBtn) mirrorBtn.addEventListener('click', mirrorImage);
     if (rotateLeftBtn) rotateLeftBtn.addEventListener('click', () => rotateImage(-90));
     if (rotateRightBtn) rotateRightBtn.addEventListener('click', () => rotateImage(90));
-    brightnessSlider.addEventListener('input', updateCameraBrightness);
-    flipCameraBtn.addEventListener('click', flipCamera);
+    if (brightnessSlider) brightnessSlider.addEventListener('input', updateCameraBrightness);
+    if (flipCameraBtn) flipCameraBtn.addEventListener('click', flipCamera);
     if (blurToggle) blurToggle.addEventListener('click', toggleBlur);
-    flashBtn.addEventListener('click', toggleFlash);
-    themeToggle.addEventListener('click', () => setTheme(currentTheme === 'light' ? 'dark' : 'light'));
+    if (flashBtn) flashBtn.addEventListener('click', toggleFlash);
+    if (themeToggle) themeToggle.addEventListener('click', () => setTheme(currentTheme === 'light' ? 'dark' : 'light'));
     if (redThemeBtn) redThemeBtn.addEventListener('click', () => setTheme('red'));
 
     // Menu sobre
-    aboutBtn.addEventListener('click', toggleAbout);
+    if (aboutBtn) aboutBtn.addEventListener('click', toggleAbout);
     if (fsAboutBtn) fsAboutBtn.addEventListener('click', toggleAbout);
 
     // Eventos de tela cheia
     document.addEventListener('fullscreenchange', handleFullscreenChange);
 
     // Eventos de toque para a imagem
-    importedImage.addEventListener('touchstart', handleTouchStart, { passive: false });
+    if (importedImage) importedImage.addEventListener('touchstart', handleTouchStart, { passive: false });
     document.addEventListener('touchmove', handleTouchMove, { passive: false });
     document.addEventListener('touchend', handleTouchEnd);
 }
@@ -113,9 +113,10 @@ async function startCamera() {
             }
         });
     } catch (err) {
-    console.error("Erro ao acessar a câmera:", err);
-    alert("Não foi possível acessar a câmera. Por favor, verifique as permissões.");
+        console.error("Erro ao acessar a câmera:", err);
+        alert("Não foi possível acessar a câmera. Por favor, verifique as permissões.");
     }
+}
 
 async function toggleFlash() {
     if (!cameraStream) return;
