@@ -271,3 +271,39 @@ input[type="range"]::-webkit-slider-thumb {
 :fullscreen .floating-btn:hover {
     display: flex;
 }
+/* Botão de flash */
+#flash-btn {
+    top: 140px;
+}
+
+/* Feedback visual para botões ativos */
+.control-btn.active {
+    background-color: var(--accent-color);
+}
+
+.control-btn.active img {
+    filter: invert(1);
+}
+
+/* Melhorias no painel de configurações */
+.settings-group {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.settings-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* Ajustes para imagem importada */
+#imported-image {
+    touch-action: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    max-width: 95%;
+    max-height: 95%;
+    cursor: move;
+}
