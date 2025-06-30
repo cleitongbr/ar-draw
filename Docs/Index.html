@@ -3,12 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AR Draw - Projetor de Desenho</title>
+    <title>AR Draw</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="dark-theme">
+    <!-- Tela de carregamento -->
+    <div id="loading-screen">
+        <img src="icons/logo.svg" alt="AR Draw" class="logo">
+    </div>
+
     <!-- Container principal -->
-    <div class="container">
+    <div class="container hidden">
         <!-- Video da câmera -->
         <video id="camera" autoplay playsinline></video>
         
@@ -17,66 +22,76 @@
             <img id="imported-image" style="display: none;">
         </div>
         
-        <!-- Canvas para desenho -->
-        <canvas id="drawing-canvas"></canvas>
-        
-        <!-- Controles de desenho -->
-        <div class="draw-controls">
-            <button id="brush-btn" class="control-btn" title="Pincel">
-                <img src="icons/brush.svg" alt="Pincel">
+        <!-- Controles principais -->
+        <div class="main-controls">
+            <button id="import-btn" class="control-btn" title="Importar">
+                <img src="icons/import.svg" alt="Importar">
             </button>
-            <button id="eraser-btn" class="control-btn" title="Borracha">
-                <img src="icons/eraser.svg" alt="Borracha">
-            </button>
-            <input type="color" id="color-picker" value="#000000">
-            <input type="range" id="brush-size" min="1" max="50" value="5">
-            <button id="undo-btn" class="control-btn" title="Desfazer">
-                <img src="icons/undo.svg" alt="Desfazer">
-            </button>
-            <button id="clear-btn" class="control-btn" title="Limpar">
-                <img src="icons/clear.svg" alt="Limpar">
+            <input type="file" id="file-input" accept="image/*" style="display: none;">
+            
+            <button id="fullscreen-btn" class="control-btn" title="Tela cheia">
+                <img src="icons/fullscreen.svg" alt="Tela cheia">
             </button>
         </div>
         
-        <!-- Controles de imagem -->
-        <div class="image-controls">
-            <button id="upload-btn" class="control-btn" title="Upload">
-                <img src="icons/upload.svg" alt="Upload">
-                <input type="file" id="file-input" accept="image/*" style="display: none;">
-            </button>
-            <button id="flip-camera-btn" class="control-btn" title="Inverter Câmera">
-                <img src="icons/camera-flip.svg" alt="Inverter Câmera">
-            </button>
-            <div class="slider-container">
-                <img src="icons/opacity.svg" alt="Opacidade" class="slider-icon">
-                <input type="range" id="opacity-slider" min="0" max="100" value="50">
+        <!-- Painel de configurações (oculto por padrão) -->
+        <div id="settings-panel" class="hidden">
+            <div class="settings-group">
+                <h3>Imagem</h3>
+                <div class="slider-container">
+                    <span>Rotacionar</span>
+                    <input type="range" id="rotate-slider" min="0" max="360" value="0">
+                </div>
+                <div class="slider-container">
+                    <span>Inclinação 3D</span>
+                    <input type="range" id="tilt-slider" min="-45" max="45" value="0">
+                </div>
+                <button id="mirror-btn" class="control-btn" title="Espelhar">
+                    <img src="icons/mirror.svg" alt="Espelhar">
+                </button>
             </div>
-            <button id="rotate-btn" class="control-btn" title="Rotacionar">
-                <img src="icons/rotate.svg" alt="Rotacionar">
-            </button>
-            <button id="mirror-btn" class="control-btn" title="Espelhar">
-                <img src="icons/mirror.svg" alt="Espelhar">
-            </button>
-            <button id="blur-btn" class="control-btn" title="Desfocar">
-                <img src="icons/blur.svg" alt="Desfocar">
-            </button>
-            <button id="save-btn" class="control-btn" title="Salvar">
-                <img src="icons/save.svg" alt="Salvar">
-            </button>
+            
+            <div class="settings-group">
+                <h3>Câmera</h3>
+                <div class="slider-container">
+                    <span>Brilho</span>
+                    <input type="range" id="brightness-slider" min="0" max="200" value="100">
+                </div>
+                <button id="flip-camera-btn" class="control-btn" title="Inverter Câmera">
+                    <img src="icons/camera-flip.svg" alt="Inverter Câmera">
+                </button>
+            </div>
+            
+            <div class="settings-group">
+                <h3>Aparência</h3>
+                <button id="theme-toggle" class="control-btn" title="Alternar tema">
+                    <img src="icons/sun.svg" alt="Tema claro">
+                </button>
+            </div>
         </div>
         
-        <!-- Menu sobre -->
-        <div class="about-menu">
-            <button id="about-btn">Sobre AR Draw</button>
-            <div id="about-content" class="hidden">
-                <p>Criado para artistas que querem traçar imagens usando o celular como projetor AR.</p>
+        <!-- Botão de configurações -->
+        <button id="settings-btn" class="control-btn floating-btn" title="Configurações">
+            <img src="icons/settings.svg" alt="Configurações">
+        </button>
+        
+        <!-- Menu sobre (oculto por padrão) -->
+        <div id="about-panel" class="hidden">
+            <div class="about-content">
+                <h3>AR Draw v2.0</h3>
+                <p>Ferramenta de projeção AR para artistas</p>
                 <div class="social-links">
                     <a href="https://github.com/seuuser" target="_blank">GitHub</a>
                     <a href="https://instagram.com/seuuser" target="_blank">Instagram</a>
                 </div>
-                <button id="close-about">Fechar</button>
+                <button id="close-about" class="control-btn">Fechar</button>
             </div>
         </div>
+        
+        <!-- Botão sobre -->
+        <button id="about-btn" class="control-btn floating-btn" title="Sobre">
+            <img src="icons/info.svg" alt="Sobre">
+        </button>
     </div>
 
     <script src="script.js"></script>
