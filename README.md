@@ -1,4 +1,9 @@
-BETAAAA 30/06/2025 
+**Ar Draw**    
+v0.0.1 - 30/06/2025:
+added: import photo, overlay.
+
+v0.0.2 - 01/07/2025:
+added: photo 3d
 
 
-https://cleitongbr.github.io/ar-draw/Index.html
+[ArDraw website](https://cleitongbr.github.io/ar-draw/Index.html)
