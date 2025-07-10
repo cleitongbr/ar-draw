@@ -2,7 +2,6 @@
 let cameraStream = null;
 let isMirrored = false;
 let brightness = 100;
-let currentTheme = 'dark'; // 'dark', 'light' ou 'red'
 let isSettingsOpen = false;
 let isAboutOpen = false;
 let isFlashOn = false;
@@ -15,12 +14,14 @@ let rotateX = 0;
 let rotateY = 0;
 let rotateZ = 0;
 let imageOpacity = 100;
+let isTouchEnabled = true;
+let currentTheme = 'dark';
 
 // Elementos DOM
 const elements = {
     loadingScreen: document.getElementById('loading-screen'),
     container: document.querySelector('.container'),
-    video: document.getElementById('camera'),
+    video: document.getElementById('camera-preview'),
     importedImage: document.getElementById('imported-image'),
     fileInput: document.getElementById('file-input'),
     importBtn: document.getElementById('import-btn'),
@@ -28,7 +29,6 @@ const elements = {
     minimizeBtn: document.getElementById('minimize-btn'),
     settingsBtn: document.getElementById('settings-btn'),
     fsSettingsBtn: document.getElementById('fs-settings-btn'),
-    fsAboutBtn: document.getElementById('fs-about-btn'),
     settingsPanel: document.getElementById('settings-panel'),
     rotateXSlider: document.getElementById('rotate-x-slider'),
     rotateYSlider: document.getElementById('rotate-y-slider'),
@@ -40,15 +40,38 @@ const elements = {
     resetOpacityBtn: document.getElementById('reset-opacity-btn'),
     resetBrightnessBtn: document.getElementById('reset-brightness-btn'),
     mirrorBtn: document.getElementById('mirror-btn'),
+    cameraMirrorBtn: document.getElementById('camera-mirror-btn'),
     brightnessSlider: document.getElementById('brightness-slider'),
     flipCameraBtn: document.getElementById('flip-camera-btn'),
     flashBtn: document.getElementById('flash-btn'),
-    themeToggle: document.getElementById('theme-toggle'),
     aboutToggle: document.getElementById('about-toggle'),
     aboutPanel: document.getElementById('about-panel'),
-    closeAboutBtn: document.getElementById('close-about-btn'),
-    fullscreenControls: document.getElementById('fullscreen-controls')
+    fullscreenControls: document.getElementById('fullscreen-controls'),
+    touchToggle: document.getElementById('touch-toggle'),
+    cameraError: document.getElementById('camera-error'),
+    retryCameraBtn: document.getElementById('retry-camera-btn')
 };
+
+// Função para mostrar mensagem
+function showMessage(type, message, duration = 3000) {
+    const messageBox = document.getElementById(type === 'success' ? 'sucess' : 'info');
+    const messageText = messageBox.querySelector('.message-text');
+    
+    // Atualiza o texto da mensagem
+    messageText.textContent = message;
+    
+    // Mostra a mensagem
+    messageBox.classList.remove('hidden');
+    messageBox.classList.add('visible');
+    
+    // Esconde após o tempo definido
+    if (duration > 0) {
+        setTimeout(() => {
+            messageBox.classList.remove('visible');
+            messageBox.classList.add('hidden');
+        }, duration);
+    }
+}
 
 // Inicialização
 function init() {
@@ -73,12 +96,16 @@ function initSettings() {
     elements.rotateYSlider.value = rotateY;
     elements.rotateZSlider.value = rotateZ;
     elements.opacitySlider.value = imageOpacity;
+    elements.touchToggle.checked = isTouchEnabled;
 }
 
 // Configurar listeners de eventos
 function setupEventListeners() {
     // Controles de imagem
-    elements.importBtn?.addEventListener('click', () => elements.fileInput.click());
+    elements.importBtn?.addEventListener('click', () => {
+        elements.fileInput.value = ''; // Permite selecionar o mesmo arquivo novamente
+        elements.fileInput.click();
+    });
     elements.fileInput?.addEventListener('change', handleImageUpload);
     
     // Controles de câmera
@@ -89,6 +116,10 @@ function setupEventListeners() {
         brightness = 100;
         elements.brightnessSlider.value = 100;
         updateCameraBrightness();
+    });
+    elements.cameraMirrorBtn?.addEventListener('click', () => {
+        isMirrored = !isMirrored;
+        elements.video.style.transform = isMirrored ? 'scaleX(-1)' : 'scaleX(1)';
     });
     
     // Transformações de imagem
@@ -124,15 +155,15 @@ function setupEventListeners() {
     elements.fullscreenBtn?.addEventListener('click', toggleFullscreen);
     elements.minimizeBtn?.addEventListener('click', toggleFullscreen);
     
-    // Temas e efeitos
-    elements.themeToggle?.addEventListener('click', toggleTheme);
+    // Controle de touch
+    elements.touchToggle?.addEventListener('change', (e) => {
+        isTouchEnabled = e.target.checked;
+    });
     
     // Painéis
     elements.settingsBtn?.addEventListener('click', toggleSettings);
     elements.fsSettingsBtn?.addEventListener('click', toggleSettings);
     elements.aboutToggle?.addEventListener('click', toggleAbout);
-    elements.fsAboutBtn?.addEventListener('click', toggleAbout);
-    elements.closeAboutBtn?.addEventListener('click', toggleAbout);
     
     // Eventos de tela cheia
     document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -144,6 +175,20 @@ function setupEventListeners() {
     document.addEventListener('click', handleClickOutside);
 }
 
+function getDistance(touch1, touch2) {
+    return Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+    );
+}
+
+function getAngle(touch1, touch2) {
+    return Math.atan2(
+        touch2.clientY - touch1.clientY,
+        touch2.clientX - touch1.clientX
+    ) * 180 / Math.PI;
+}
+
 function setupTouchEvents() {
     let initialDistance = null;
     let initialScale = 1;
@@ -152,6 +197,8 @@ function setupTouchEvents() {
     let initialAngle = 0;
 
     elements.importedImage?.addEventListener('touchstart', (e) => {
+        if (!isTouchEnabled) return;
+        
         if (e.touches.length === 2) {
             e.preventDefault();
             initialDistance = getDistance(e.touches[0], e.touches[1]);
@@ -165,6 +212,8 @@ function setupTouchEvents() {
     }, { passive: false });
 
     document.addEventListener('touchmove', (e) => {
+        if (!isTouchEnabled) return;
+        
         if (e.touches.length === 2 && initialDistance !== null) {
             e.preventDefault();
             const currentDistance = getDistance(e.touches[0], e.touches[1]);
@@ -192,55 +241,22 @@ function setupTouchEvents() {
     });
 }
 
-function handleClickOutside(e) {
-    if (isSettingsOpen && !elements.settingsPanel.contains(e.target) && 
-        e.target !== elements.settingsBtn && e.target !== elements.fsSettingsBtn) {
-        toggleSettings();
-    }
-    if (isAboutOpen && !elements.aboutPanel.contains(e.target) && 
-        e.target !== elements.aboutToggle && e.target !== elements.fsAboutBtn) {
-        toggleAbout();
-    }
-}
-
-function getDistance(touch1, touch2) {
-    return Math.hypot(
-        touch2.clientX - touch1.clientX,
-        touch2.clientY - touch1.clientY
-    );
-}
-
-function getAngle(touch1, touch2) {
-    return Math.atan2(
-        touch2.clientY - touch1.clientY,
-        touch2.clientX - touch1.clientX
-    ) * 180 / Math.PI;
-}
-
-// Funções da câmera
 async function startCamera() {
     try {
-        const constraints = {
-            video: {
-                facingMode: 'environment',
-                width: { ideal: 1920 },
-                height: { ideal: 1080 }
-            }
-        };
-        
-        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-        elements.video.srcObject = cameraStream;
-        
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        cameraStream = stream;
+        elements.video.srcObject = stream;
         await elements.video.play();
+        elements.cameraError.classList.add('hidden');
         
-        // Verifica se o dispositivo suporta flash
-        const track = cameraStream.getVideoTracks()[0];
+        // Verifica se o dispositivo tem flash
+        const track = stream.getVideoTracks()[0];
         if (track.getCapabilities().torch) {
             elements.flashBtn.style.display = 'flex';
         }
-    } catch (err) {
-        console.error("Erro ao acessar a câmera:", err);
-        showError("Não foi possível acessar a câmera. Verifique as permissões.");
+    } catch (error) {
+        console.error("Erro ao acessar a câmera:", error);
+        elements.cameraError.classList.remove('hidden');
     }
 }
 
@@ -254,7 +270,7 @@ async function toggleFlash() {
         elements.flashBtn.classList.toggle('active', isFlashOn);
     } catch (err) {
         console.error("Erro ao alternar flash:", err);
-        showError("Seu dispositivo não suporta flash ou ocorreu um erro.");
+        showMessage('info', 'Seu dispositivo não suporta flash ou ocorreu um erro.');
     }
 }
 
@@ -270,16 +286,21 @@ async function flipCamera() {
     
     cameraStream.getTracks().forEach(track => track.stop());
     
-    const constraints = {
-        video: {
-            facingMode: elements.video.srcObject.getVideoTracks()[0].getSettings().facingMode === 'user' ? 'environment' : 'user',
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
-        }
-    };
+    let currentFacingMode = 'environment';
+    if (elements.video.srcObject?.getVideoTracks()?.length > 0) {
+        const track = elements.video.srcObject.getVideoTracks()[0];
+        const settings = track.getSettings();
+        currentFacingMode = settings.facingMode === 'user' ? 'environment' : 'user';
+    }
     
     try {
-        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: currentFacingMode,
+                width: { ideal: 1920 },
+                height: { ideal: 1080 }
+            }
+        });
         elements.video.srcObject = cameraStream;
         await elements.video.play();
         
@@ -287,7 +308,7 @@ async function flipCamera() {
         elements.flashBtn.style.display = track.getCapabilities().torch ? 'flex' : 'none';
     } catch (err) {
         console.error("Erro ao alternar câmera:", err);
-        showError("Não foi possível alternar a câmera.");
+        showMessage('info', 'Não foi possível alternar a câmera.');
     }
 }
 
@@ -296,12 +317,25 @@ function handleImageUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
     
+    // Verifica se é uma imagem
+    if (!file.type.match('image.*')) {
+        showMessage('info', 'Por favor, selecione um arquivo de imagem (JPEG, PNG, etc.)');
+        return;
+    }
+    
     const reader = new FileReader();
+    
     reader.onload = (event) => {
         elements.importedImage.src = event.target.result;
         elements.importedImage.style.display = 'block';
         resetImageTransformations();
+        showMessage('success', 'Imagem importada com sucesso!');
     };
+    
+    reader.onerror = () => {
+        showMessage('info', 'Erro ao ler o arquivo. Tente novamente.');
+    };
+    
     reader.readAsDataURL(file);
 }
 
@@ -348,28 +382,6 @@ function mirrorImage() {
     updateImageTransform();
 }
 
-// Tema
-function toggleTheme() {
-    const themes = ['dark', 'light', 'red'];
-    const currentIndex = themes.indexOf(currentTheme);
-    const nextTheme = themes[(currentIndex + 1) % themes.length];
-    setTheme(nextTheme);
-}
-
-function setTheme(theme) {
-    document.body.classList.remove('dark-theme', 'light-theme', 'red-theme');
-    document.body.classList.add(`${theme}-theme`);
-    currentTheme = theme;
-
-    const iconMap = {
-        dark: { icon: 'sun.svg', alt: 'Tema claro' },
-        light: { icon: 'moon.svg', alt: 'Tema escuro' },
-        red: { icon: 'sun.svg', alt: 'Tema claro' }
-    };
-    
-    elements.themeToggle.innerHTML = `<img src="icons/${iconMap[theme].icon}" alt="${iconMap[theme].alt}">`;
-}
-
 // Tela cheia
 async function toggleFullscreen() {
     try {
@@ -382,7 +394,7 @@ async function toggleFullscreen() {
         }
     } catch (err) {
         console.error("Erro ao alternar tela cheia:", err);
-        showError("Seu navegador não suporta tela cheia ou ocorreu um erro.");
+        showMessage('info', 'Seu navegador não suporta tela cheia ou ocorreu um erro.');
     }
 }
 
@@ -393,12 +405,10 @@ function handleFullscreenChange() {
         elements.fullscreenControls?.classList.remove('hidden');
         elements.fullscreenBtn?.classList.add('hidden');
         elements.settingsBtn?.classList.add('hidden');
-        elements.aboutToggle?.classList.add('hidden');
     } else {
         elements.fullscreenControls?.classList.add('hidden');
         elements.fullscreenBtn?.classList.remove('hidden');
         elements.settingsBtn?.classList.remove('hidden');
-        elements.aboutToggle?.classList.remove('hidden');
     }
 }
 
@@ -406,22 +416,29 @@ function handleFullscreenChange() {
 function toggleSettings() {
     isSettingsOpen = !isSettingsOpen;
     elements.settingsPanel.classList.toggle('hidden', !isSettingsOpen);
-    
-    if (isAboutOpen) toggleAbout();
+
+    if (isSettingsOpen && isAboutOpen) {
+        isAboutOpen = false;
+        elements.aboutPanel.classList.add('hidden');
+    }
     if (isSettingsOpen) elements.settingsPanel.focus();
 }
 
 function toggleAbout() {
     isAboutOpen = !isAboutOpen;
     elements.aboutPanel.classList.toggle('hidden', !isAboutOpen);
-    
-    if (isSettingsOpen) toggleSettings();
+
+    if (isAboutOpen && isSettingsOpen) {
+        isSettingsOpen = false;
+        elements.settingsPanel.classList.add('hidden');
+    }
     if (isAboutOpen) elements.aboutPanel.focus();
 }
 
+
 // Utilitários
 function showError(message) {
-    alert(message);
+    showMessage('info', message);
 }
 
 // Inicializar aplicação
