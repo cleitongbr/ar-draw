@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
+@import url("https://fonts.googleapis.com/css?family=Raleway:900&display=swap");
 
 /* Reset e configurações básicas */
 * {
@@ -13,7 +14,7 @@
     --text-color: #ffffff;
     --control-bg: rgba(255, 255, 255, 0.1);
     --control-bg-hover: rgba(255, 255, 255, 0.2);
-    --accent-color: #4dabf7;
+    --accent-color: #858585;
 }
 
 .light-theme {
@@ -58,17 +59,28 @@ body {
 #loading-screen .logo {
     width: 120px;
     height: 120px;
-    animation: pulse 3s linear infinite;
+    animation: pulse 2s linear infinite;
+    filter: invert(1);
 }
 
 @keyframes pulse {
-    0% { opacity: 0; transform: scale(0); }
-    50% { opacity: 1; transform: scale(1); }
-    100% { opacity: 0; transform: scale(2); }
+    0% { opacity: 0; transform: scale(0.1); }
+    50% { opacity: 1; transform: scale(0.6); }
+    100% { opacity: 0; transform: scale(1); }
 }
 
 .hidden {
     display: none !important;
+    size: 0 !important;
+    left: -9999px !important;
+    top: -9999px !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+    transform: scale(0) !important;
 }
 
 /* Container principal */
@@ -182,13 +194,12 @@ video {
 /* Painel de configurações */
 #settings-panel {
     position: fixed;
-    bottom: 90px;
+    bottom: 100px;
     left: 50%;
     transform: translateX(-50%);
-    width: 90%;
+    width: 100%;
     max-width: 400px;
-    background-color: var(--control-bg);
-    backdrop-filter: blur(10px);
+    background-color: rgba(0, 0, 0, 0.9);
     border-radius: 15px;
     padding: 15px;
     z-index: 25;
@@ -196,19 +207,20 @@ video {
 }
 
 .settings-scroll {
-    max-height: 60vh;
+    max-height: 70vh;
     overflow-y: auto;
     padding-right: 8px;
 }
 
 .settings-scroll::-webkit-scrollbar {
-    width: 6px;
+    width: 10px;
 }
 
 .settings-scroll::-webkit-scrollbar-track {
     background: rgba(0,0,0,0.1);
     border-radius: 3px;
 }
+
 
 .settings-scroll::-webkit-scrollbar-thumb {
     background: var(--accent-color);
@@ -276,14 +288,14 @@ input[type="range"]::-webkit-slider-thumb {
     left: 50%;
     transform: translate(-50%, -50%);
     width: 80%;
-    max-width: 300px;
-    background-color: var(--control-bg);
-    backdrop-filter: blur(10px);
+    max-width: 500px;
     border-radius: 15px;
     padding: 20px;
     z-index: 30;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     text-align: center;
+    background-color: rgba(0, 0, 0, 0.9);
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .about-content h3 {
@@ -318,40 +330,118 @@ input[type="range"]::-webkit-slider-thumb {
     filter: invert(1);
 }
 
-/* Animação do título */
-.titulo-animado {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1.8em;
+#camera-error {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.error-content {
     text-align: center;
-    display: block;
-    margin-bottom: 15px;
-    background: linear-gradient(45deg, #ff6ec4, #7873f5, #4adede);
-    background-size: 600% 600%;
-    color: transparent;
-    -webkit-background-clip: text;
-    background-clip: text;
-    animation: brilhoTexto 6s ease infinite;
-    text-shadow: 0 0 20px rgba(255,255,255,0.3);
+    color: white;
+    padding: 20px;
+    max-width: 300px;
 }
 
-@keyframes brilhoTexto {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+.error-content img {
+    width: 80px;
+    margin-bottom: 20px;
 }
 
-/* Ajustes para orientação retrato */
-@media (orientation: portrait) {
-    .control-btn {
-        width: 45px;
-        height: 45px;
-    }
-    
-    #settings-panel {
-        bottom: 70px;
-    }
-    
-    #fullscreen-controls {
-        bottom: 10px;
-    }
+#retry-camera-btn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background: #4CAF50;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-weight: bold;
+}
+
+.fail {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 20px;
+    filter: invert(1);
+    animation: pulses 10s linear infinite;
+}
+
+@keyframes pulses {
+    0% { opacity: 1; transform: scale(1.15); }
+    50% { opacity: 1; transform: scale(1); }
+    100% { opacity: 1; transform: scale(1.15); }
+}
+
+.switch-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #a7a7a7;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.slider.round {
+    border-radius: 24px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+} 
+
+.versao {
+    font-size: 16px;
+    color: var(--accent-color);
+    text-align: center;
+    margin-top: 10px;
 }
