@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AR Draw v0.0.3</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+    <title>AR Draw</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="dark-theme">
@@ -11,26 +12,23 @@
     <div id="loading-screen">
         <img src="icons/logo.svg" alt="AR Draw" class="logo">
     </div>
-
     <!-- Container principal -->
     <div class="container hidden">
         <!-- Video da câmera -->
-        <video id="camera" autoplay playsinline></video>
+        <video id="camera-preview" autoplay playsinline></video>
         
         <!-- Overlay da imagem importada -->
         <div class="image-container">
             <img id="imported-image" style="display: none;" alt="Imagem importada">
         </div>
-        
         <!-- Painel de configurações -->
         <div id="settings-panel" class="hidden" tabindex="-1">
             <div class="settings-scroll">
                 <div class="settings-group">
-                    <a class="titulo-animado">AR DRAW</a>
                     <h3>Imagem</h3>
                     <div class="slider-container">
                         <span>Rotacionar X:</span>
-                        <input type="range" id="rotate-x-slider" min="-180" max="180" value="0">
+                        <input type="range" id="rotate-x-slider" min="-85" max="85" value="0">
                         <button id="reset-rotate-x-btn" class="control-btn" title="Redefinir">
                             <img src="icons/reset.svg" alt="Redefinir">
                         </button>
@@ -51,15 +49,23 @@
                     </div>
                     <div class="slider-container">
                         <span>Opacidade:</span>
-                        <input type="range" id="opacity-slider" min="0" max="100" value="100">
+                        <input type="range" id="opacity-slider" min="0" max="100" value="50">
                         <button id="reset-opacity-btn" class="control-btn" title="Redefinir">
                             <img src="icons/reset.svg" alt="Redefinir">
                         </button>
                     </div>
-                    <div class="button-group">
-                        <button id="mirror-btn" class="control-btn" title="Espelhar">
-                            <img src="icons/mirror.svg" alt="Espelhar">
-                        </button>
+                        <div class="slider-container">
+                            <span>Inverter imagem:</span>
+                            <button id="mirror-btn" class="control-btn" title="Espelhar">
+                                <img src="icons/mirror.svg" alt="Inverter">
+                            </button>
+                        </div>
+                    <div class="switch-container">
+                        <span>Movimento por Touch: (não funciona...)</span>
+                            <label class="switch">
+                            <input type="checkbox" id="touch-toggle" disabled>
+                            <span class="slider round"></span>
+                        </label>
                     </div>
                 </div>
                 
@@ -71,6 +77,9 @@
                         <button id="reset-brightness-btn" class="control-btn" title="Redefinir">
                             <img src="icons/reset.svg" alt="Redefinir">
                         </button>
+                        <button id="camera-mirror-btn" class="control-btn" title="Espelhar">
+                            <img src="icons/mirror.svg" alt="Espelhar">
+                        </button>
                     </div>
                     <div class="button-group">
                         <button id="flip-camera-btn" class="control-btn" title="Inverter Câmera">
@@ -81,7 +90,6 @@
                         </button>
                     </div>
                 </div>
-                
                 <div class="settings-group">
                     <h3>Importação</h3>
                     <div class="button-group">
@@ -95,6 +103,9 @@
                         <button id="about-toggle" class="control-btn" title="Sobre">
                             <img src="icons/info.svg" alt="Sobre">
                         </button>
+                    </div>
+                    <div class="settings-group">
+                        <p class="versao">versão: 0.0.4</p>
                     </div>
                 </div>
             </div>
@@ -114,28 +125,33 @@
         <button id="settings-btn" class="control-btn floating-btn" title="Configurações">
             <img src="icons/settings.svg" alt="Configurações">
         </button>
+        <!-- Adicione este div após o container principal -->
+        <div id="camera-error" class="hidden">
+            <div class="error-content">
+                <img class="fail" src="icons/camera-fail.svg" alt="Falhou">
+                <p>Por favor, permita o acesso à câmera para usar o AR Draw</p>
+            </div>
+        </div>
         
         <!-- Menu sobre -->
         <div id="about-panel" class="hidden" tabindex="-1">
             <div class="about-content">
-                <h3>AR Draw v0.0.3</h3>
+                <h3>AR Draw v0.0.4 -  09/07/25</h3>
                 <p>Ferramenta de projeção AR para artistas</p>
                 <h3>Novidades:</h3>
                 <p>- Controles 3D completos (X, Y, Z)</p>
                 <p>- Controle de opacidade</p>
                 <p>- Interface otimizada</p>
+                <p>- fixed bug, failed</p>
                 <div class="social-links">
                     <a class="control-btn" href="https://github.com/cleitongbr" target="_blank" rel="noopener noreferrer">
                         <img src="icons/github.svg" alt="Github">
                     </a>
                 </div>
-                <button id="close-about-btn" class="control-btn" title="Fechar">
-                    <img src="icons/back.svg" alt="Voltar">
-                </button>
+                <a>Criador por cleitongbr</a>
             </div>
         </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
