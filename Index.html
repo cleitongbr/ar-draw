@@ -15,7 +15,7 @@
     <!-- Container principal -->
     <div class="container hidden">
         <!-- Video da câmera -->
-        <video id="camera-preview" autoplay playsinline></video>
+        <video id="camera-preview" autoplay playsinline style="width:100%;"></video>
         
         <!-- Overlay da imagem importada -->
         <div class="image-container">
@@ -126,12 +126,7 @@
             <img src="icons/settings.svg" alt="Configurações">
         </button>
         <!-- Adicione este div após o container principal -->
-        <div id="camera-error" class="hidden">
-            <div class="error-content">
-                <img class="fail" src="icons/camera-fail.svg" alt="Falhou">
-                <p>Por favor, permita o acesso à câmera para usar o AR Draw</p>
-            </div>
-        </div>
+        <div id="camera-error" class="hidden">Erro ao acessar a câmera</div>
         
         <!-- Menu sobre -->
         <div id="about-panel" class="hidden" tabindex="-1">
