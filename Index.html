@@ -2,150 +2,183 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
-    <title>AR Draw</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AR Draw - Liquid Edition</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
 </head>
-<body class="dark-theme">
-    <!-- Tela de carregamento -->
+<body class="ios-theme">
+    
     <div id="loading-screen">
-        <img src="icons/logo.svg" alt="AR Draw" class="logo">
+        <div class="glass-loader">
+            <img src="icons/logo.svg" alt="AR Draw" class="logo animate-pulse">
+        </div>
     </div>
-    <!-- Container principal -->
+
     <div class="container hidden">
-        <!-- Video da câmera -->
-        <video id="camera-preview" autoplay playsinline style="width:100%;"></video>
+        <video id="camera-preview" autoplay playsinline></video>
         
-        <!-- Overlay da imagem importada -->
         <div class="image-container">
             <img id="imported-image" style="display: none;" alt="Imagem importada">
         </div>
-        <!-- Painel de configurações -->
-        <div id="settings-panel" class="hidden" tabindex="-1">
+
+        <button id="settings-btn" class="control-btn floating-pill" title="Configurações">
+            <img src="icons/settings.svg" alt="Configurações">
+            <span>Ajustes</span>
+        </button>
+
+        <div id="settings-panel" class="hidden glass-panel" tabindex="-1">
+            <div class="panel-header">
+                <h2>Ajustes</h2>
+                <div class="drag-handle"></div>
+            </div>
+            
             <div class="settings-scroll">
-                <div class="settings-group">
-                    <h3>Imagem</h3>
-                    <div class="slider-container">
-                        <span>Rotacionar X:</span>
-                        <input type="range" id="rotate-x-slider" min="-85" max="85" value="0">
-                        <button id="reset-rotate-x-btn" class="control-btn" title="Redefinir">
-                            <img src="icons/reset.svg" alt="Redefinir">
-                        </button>
-                    </div>
-                    <div class="slider-container">
-                        <span>Rotacionar Y:</span>
-                        <input type="range" id="rotate-y-slider" min="-85" max="85" value="0">
-                        <button id="reset-rotate-y-btn" class="control-btn" title="Redefinir">
-                            <img src="icons/reset.svg" alt="Redefinir">
-                        </button>
-                    </div>
-                    <div class="slider-container">
-                        <span>Rotacionar Z:</span>
-                        <input type="range" id="rotate-z-slider" min="-180" max="180" value="0">
-                        <button id="reset-rotate-z-btn" class="control-btn" title="Redefinir">
-                            <img src="icons/reset.svg" alt="Redefinir">
-                        </button>
-                    </div>
-                    <div class="slider-container">
-                        <span>Opacidade:</span>
-                        <input type="range" id="opacity-slider" min="0" max="100" value="50">
-                        <button id="reset-opacity-btn" class="control-btn" title="Redefinir">
-                            <img src="icons/reset.svg" alt="Redefinir">
-                        </button>
-                    </div>
-                        <div class="slider-container">
-                            <span>Inverter imagem:</span>
-                            <button id="mirror-btn" class="control-btn" title="Espelhar">
-                                <img src="icons/mirror.svg" alt="Inverter">
-                            </button>
+                
+                <div class="settings-group glass-card">
+                    <h3>Projeção 3D</h3>
+                    
+                    <div class="control-row">
+                        <label>Eixo X</label>
+                        <div class="slider-wrapper">
+                            <input type="range" id="rotate-x-slider" min="-85" max="85" value="0">
                         </div>
-                    <div class="switch-container">
-                        <span>Movimento por Touch: (não funciona...)</span>
-                            <label class="switch">
+                        <button id="reset-rotate-x-btn" class="icon-btn small"><img src="icons/reset.svg"></button>
+                    </div>
+
+                    <div class="control-row">
+                        <label>Eixo Y</label>
+                        <div class="slider-wrapper">
+                            <input type="range" id="rotate-y-slider" min="-85" max="85" value="0">
+                        </div>
+                        <button id="reset-rotate-y-btn" class="icon-btn small"><img src="icons/reset.svg"></button>
+                    </div>
+
+                    <div class="control-row">
+                        <label>Eixo Z</label>
+                        <div class="slider-wrapper">
+                            <input type="range" id="rotate-z-slider" min="-180" max="180" value="0">
+                        </div>
+                        <button id="reset-rotate-z-btn" class="icon-btn small"><img src="icons/reset.svg"></button>
+                    </div>
+                </div>
+
+                <div class="settings-group glass-card">
+                    <h3>Aparência</h3>
+                    
+                    <div class="control-row">
+                        <label>Opacidade</label>
+                        <div class="slider-wrapper">
+                            <input type="range" id="opacity-slider" min="0" max="100" value="50">
+                        </div>
+                        <button id="reset-opacity-btn" class="icon-btn small"><img src="icons/reset.svg"></button>
+                    </div>
+
+                    <div class="actions-grid">
+                        <button id="mirror-btn" class="action-btn glass-btn">
+                            <img src="icons/mirror.svg">
+                            <span>Espelhar Img</span>
+                        </button>
+                        <button id="camera-mirror-btn" class="action-btn glass-btn">
+                            <img src="icons/mirror.svg">
+                            <span>Espelhar Câm</span>
+                        </button>
+                    </div>
+
+                    <div class="control-row switch-row">
+                        <span>Toque na Tela</span>
+                        <label class="ios-switch">
                             <input type="checkbox" id="touch-toggle" disabled>
-                            <span class="slider round"></span>
+                            <span class="slider"></span>
                         </label>
                     </div>
                 </div>
                 
-                <div class="settings-group">
+                <div class="settings-group glass-card">
                     <h3>Câmera</h3>
-                    <div class="slider-container">
-                        <span>Brilho:</span>
-                        <input type="range" id="brightness-slider" min="0" max="200" value="100">
-                        <button id="reset-brightness-btn" class="control-btn" title="Redefinir">
-                            <img src="icons/reset.svg" alt="Redefinir">
-                        </button>
-                        <button id="camera-mirror-btn" class="control-btn" title="Espelhar">
-                            <img src="icons/mirror.svg" alt="Espelhar">
-                        </button>
+                    <div class="control-row">
+                        <label>Brilho</label>
+                        <div class="slider-wrapper">
+                            <img src="icons/sun-min.svg" class="slider-icon" style="opacity:0.5; width:12px;">
+                            <input type="range" id="brightness-slider" min="0" max="200" value="100">
+                            <img src="icons/sun-max.svg" class="slider-icon" style="opacity:1; width:16px;">
+                        </div>
+                        <button id="reset-brightness-btn" class="icon-btn small"><img src="icons/reset.svg"></button>
                     </div>
-                    <div class="button-group">
-                        <button id="flip-camera-btn" class="control-btn" title="Inverter Câmera">
-                            <img src="icons/camera-flip.svg" alt="Inverter Câmera">
+
+                    <div class="actions-grid">
+                        <button id="flip-camera-btn" class="action-btn glass-btn">
+                            <img src="icons/camera-flip.svg">
+                            <span>Trocar</span>
                         </button>
-                        <button id="flash-btn" class="control-btn" title="Flash" style="display:none;">
-                            <img src="icons/flash.svg" alt="Flash">
+                        <button id="flash-btn" class="action-btn glass-btn" style="display:none;">
+                            <img src="icons/flash.svg">
+                            <span>Flash</span>
                         </button>
                     </div>
                 </div>
-                <div class="settings-group">
-                    <h3>Importação</h3>
-                    <div class="button-group">
-                        <button id="import-btn" class="control-btn" title="Importar">
-                            <img src="icons/import.svg" alt="Importar">
+
+                <div class="settings-group glass-card">
+                    <h3>Ferramentas</h3>
+                    <div class="actions-grid three-col">
+                        <button id="import-btn" class="action-btn glass-btn accent">
+                            <img src="icons/import.svg">
+                            <span>Abrir</span>
                         </button>
                         <input type="file" id="file-input" accept="image/*" style="display: none;">
-                        <button id="fullscreen-btn" class="control-btn" title="Tela cheia">
-                            <img src="icons/fullscreen.svg" alt="Tela cheia">
+                        
+                        <button id="fullscreen-btn" class="action-btn glass-btn">
+                            <img src="icons/fullscreen.svg">
+                            <span>Tela Cheia</span>
                         </button>
-                        <button id="about-toggle" class="control-btn" title="Sobre">
-                            <img src="icons/info.svg" alt="Sobre">
+                        <button id="about-toggle" class="action-btn glass-btn">
+                            <img src="icons/info.svg">
+                            <span>Sobre</span>
                         </button>
                     </div>
-                    <div class="settings-group">
-                        <p class="versao">versão: 0.0.4</p>
-                    </div>
+                    <div class="app-version">AR Draw v0.0.4</div>
                 </div>
             </div>
         </div>
         
-        <!-- Controles de tela cheia -->
-        <div id="fullscreen-controls" class="hidden">
-            <button id="minimize-btn" class="control-btn" title="Sair da tela cheia">
+        <div id="fullscreen-controls" class="hidden glass-dock">
+            <button id="minimize-btn" class="icon-btn large">
                 <img src="icons/minimize.svg" alt="Minimizar">
             </button>
-            <button id="fs-settings-btn" class="control-btn" title="Configurações">
+            <button id="fs-settings-btn" class="icon-btn large">
                 <img src="icons/settings.svg" alt="Configurações">
             </button>
         </div>
         
-        <!-- Botão de configurações -->
-        <button id="settings-btn" class="control-btn floating-btn" title="Configurações">
-            <img src="icons/settings.svg" alt="Configurações">
-        </button>
-        <!-- Adicione este div após o container principal -->
-        <div id="camera-error" class="hidden">Erro ao acessar a câmera</div>
+        <div id="camera-error" class="hidden glass-alert">
+            <p>Erro ao acessar a câmera</p>
+        </div>
         
-        <!-- Menu sobre -->
-        <div id="about-panel" class="hidden" tabindex="-1">
-            <div class="about-content">
-                <h3>AR Draw v0.0.4 -  09/07/25</h3>
-                <p>Ferramenta de projeção AR para artistas</p>
-                <h3>Novidades:</h3>
-                <p>- Controles 3D completos (X, Y, Z)</p>
-                <p>- Controle de opacidade</p>
-                <p>- Interface otimizada</p>
-                <p>- fixed bug, failed</p>
-                <div class="social-links">
-                    <a class="control-btn" href="https://github.com/cleitongbr" target="_blank" rel="noopener noreferrer">
-                        <img src="icons/github.svg" alt="Github">
-                    </a>
+        <div id="about-panel" class="hidden glass-modal" tabindex="-1">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-icon">
+                        <img src="icons/logo.svg" alt="Logo">
+                    </div>
+                    <h3>AR Draw</h3>
+                    <p class="subtitle">v0.0.4 (Liquid Build)</p>
                 </div>
-                <a>Criador por cleitongbr</a>
+                
+                <div class="changelog-list">
+                    <div class="log-item"><span>✨</span> <p>Nova interface Liquid Glass</p></div>
+                    <div class="log-item"><span>🧊</span> <p>Controles 3D e Opacidade</p></div>
+                    <div class="log-item"><span>🚀</span> <p>Performance otimizada</p></div>
+                </div>
+
+                <a href="https://github.com/cleitongbr" target="_blank" class="github-card">
+                    <img src="icons/github.svg" alt="Github">
+                    <span>github.com/cleitongbr</span>
+                </a>
+                
+                <button class="close-modal-btn" onclick="document.getElementById('about-panel').classList.add('hidden')">Fechar</button>
             </div>
         </div>
+
     </div>
     <script src="script.js"></script>
 </body>
