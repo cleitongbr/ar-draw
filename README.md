@@ -4,7 +4,7 @@ A simple augmented reality drawing tool that lets you overlay images and create 
 
 ## Changelog  
 
-### v0.0.6 - 02/02/2026
+### v0.0.5b - 02/02/2026
 - Added: Like liquid glass
 
 ### v0.0.4 - 09/07/2025  
