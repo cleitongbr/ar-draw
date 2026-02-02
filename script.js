@@ -52,32 +52,12 @@ const elements = {
     retryCameraBtn: document.getElementById('retry-camera-btn')
 };
 
-// Função para mostrar mensagem
-function showMessage(type, message, duration = 3000) {
-    const messageBox = document.getElementById(type === 'success' ? 'sucess' : 'info');
-    const messageText = messageBox.querySelector('.message-text');
-    
-    // Atualiza o texto da mensagem
-    messageText.textContent = message;
-    
-    // Mostra a mensagem
-    messageBox.classList.remove('hidden');
-    messageBox.classList.add('visible');
-    
-    // Esconde após o tempo definido
-    if (duration > 0) {
-        setTimeout(() => {
-            messageBox.classList.remove('visible');
-            messageBox.classList.add('hidden');
-        }, duration);
-    }
-}
-
 // Inicialização
 function init() {
+    // Simula tempo de carregamento e remove tela de load
     setTimeout(() => {
-        elements.loadingScreen.classList.add('hidden');
-        elements.container.classList.remove('hidden');
+        if(elements.loadingScreen) elements.loadingScreen.classList.add('hidden');
+        if(elements.container) elements.container.classList.remove('hidden');
         startCamera();
     }, 1500);
     
@@ -85,18 +65,18 @@ function init() {
     initSettings();
     
     // Verifica suporte a tela cheia
-    if (!document.fullscreenEnabled) {
+    if (!document.fullscreenEnabled && elements.fullscreenBtn) {
         elements.fullscreenBtn.style.display = 'none';
     }
 }
 
 function initSettings() {
-    elements.brightnessSlider.value = brightness;
-    elements.rotateXSlider.value = rotateX;
-    elements.rotateYSlider.value = rotateY;
-    elements.rotateZSlider.value = rotateZ;
-    elements.opacitySlider.value = imageOpacity;
-    elements.touchToggle.checked = isTouchEnabled;
+    if(elements.brightnessSlider) elements.brightnessSlider.value = brightness;
+    if(elements.rotateXSlider) elements.rotateXSlider.value = rotateX;
+    if(elements.rotateYSlider) elements.rotateYSlider.value = rotateY;
+    if(elements.rotateZSlider) elements.rotateZSlider.value = rotateZ;
+    if(elements.opacitySlider) elements.opacitySlider.value = imageOpacity;
+    if(elements.touchToggle) elements.touchToggle.checked = isTouchEnabled;
 }
 
 // Configurar listeners de eventos
@@ -120,6 +100,8 @@ function setupEventListeners() {
     elements.cameraMirrorBtn?.addEventListener('click', () => {
         isMirrored = !isMirrored;
         elements.video.style.transform = isMirrored ? 'scaleX(-1)' : 'scaleX(1)';
+        // Feedback visual no botão
+        elements.cameraMirrorBtn.style.background = isMirrored ? 'var(--accent-color)' : '';
     });
     
     // Transformações de imagem
@@ -127,6 +109,7 @@ function setupEventListeners() {
     elements.rotateYSlider?.addEventListener('input', updateImageTransform);
     elements.rotateZSlider?.addEventListener('input', updateImageTransform);
     elements.opacitySlider?.addEventListener('input', updateImageTransform);
+    
     elements.mirrorBtn?.addEventListener('click', mirrorImage);
     
     // Botões de reset
@@ -146,8 +129,8 @@ function setupEventListeners() {
         updateImageTransform();
     });
     elements.resetOpacityBtn?.addEventListener('click', () => {
-        imageOpacity = 100;
-        elements.opacitySlider.value = 100;
+        imageOpacity = 50; // Reset para 50% que é padrão no novo HTML
+        elements.opacitySlider.value = 50;
         updateImageTransform();
     });
     
@@ -160,10 +143,25 @@ function setupEventListeners() {
         isTouchEnabled = e.target.checked;
     });
     
-    // Painéis
+    // Painéis - Abrir/Fechar
     elements.settingsBtn?.addEventListener('click', toggleSettings);
     elements.fsSettingsBtn?.addEventListener('click', toggleSettings);
     elements.aboutToggle?.addEventListener('click', toggleAbout);
+    
+    // Fechar ao clicar na "barrinha" (Drag Handle)
+    const dragHandle = document.querySelector('.drag-handle');
+    if (dragHandle) {
+        dragHandle.addEventListener('click', toggleSettings);
+    }
+
+    // Fechar Modal Sobre via botão
+    const closeAboutBtn = document.querySelector('.close-modal-btn');
+    if(closeAboutBtn) {
+        closeAboutBtn.addEventListener('click', () => {
+             elements.aboutPanel.classList.add('hidden');
+             isAboutOpen = false;
+        });
+    }
     
     // Eventos de tela cheia
     document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -171,8 +169,33 @@ function setupEventListeners() {
     // Eventos de toque para a imagem
     setupTouchEvents();
     
-    // Fechar painéis ao clicar fora
-    document.addEventListener('click', handleClickOutside);
+    // Fechar painéis ao clicar fora (ESSA É A CORREÇÃO PRINCIPAL)
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside, {passive: false});
+}
+
+// Função para detectar clique fora dos painéis
+function handleClickOutside(event) {
+    // Se o painel de configurações estiver aberto
+    if (isSettingsOpen) {
+        // Verifica se o clique NÃO foi no painel nem no botão de abrir
+        if (!elements.settingsPanel.contains(event.target) && 
+            !elements.settingsBtn.contains(event.target) &&
+            !elements.fsSettingsBtn.contains(event.target)) {
+            toggleSettings();
+        }
+    }
+
+    // Se o painel Sobre estiver aberto
+    if (isAboutOpen) {
+        const modalContent = elements.aboutPanel.querySelector('.modal-content');
+        // Verifica se clicou no fundo escuro (fora do conteúdo)
+        if (elements.aboutPanel.contains(event.target) && 
+            !modalContent.contains(event.target) &&
+            !elements.aboutToggle.contains(event.target)) {
+            toggleAbout();
+        }
+    }
 }
 
 function getDistance(touch1, touch2) {
@@ -223,16 +246,19 @@ function setupTouchEvents() {
             
             if (Math.abs(currentAngle - initialAngle) > 5) {
                 rotateZ += (currentAngle - initialAngle) * 0.5;
-                elements.rotateZSlider.value = rotateZ;
+                if(elements.rotateZSlider) elements.rotateZSlider.value = rotateZ;
                 initialAngle = currentAngle;
             }
             
             updateImageTransform();
         } else if (e.touches.length === 1) {
-            e.preventDefault();
-            imageX = e.touches[0].clientX - initialX;
-            imageY = e.touches[0].clientY - initialY;
-            updateImageTransform();
+            // Só move se não estiver interagindo com sliders
+            if (e.target.type !== 'range') {
+                e.preventDefault();
+                imageX = e.touches[0].clientX - initialX;
+                imageY = e.touches[0].clientY - initialY;
+                updateImageTransform();
+            }
         }
     }, { passive: false });
 
@@ -243,20 +269,26 @@ function setupTouchEvents() {
 
 async function startCamera() {
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'environment',
+                width: { ideal: 1920 },
+                height: { ideal: 1080 }
+            } 
+        });
         cameraStream = stream;
         elements.video.srcObject = stream;
         await elements.video.play();
-        elements.cameraError.classList.add('hidden');
+        if(elements.cameraError) elements.cameraError.classList.add('hidden');
         
         // Verifica se o dispositivo tem flash
         const track = stream.getVideoTracks()[0];
-        if (track.getCapabilities().torch) {
+        if (track.getCapabilities().torch && elements.flashBtn) {
             elements.flashBtn.style.display = 'flex';
         }
     } catch (error) {
         console.error("Erro ao acessar a câmera:", error);
-        elements.cameraError.classList.remove('hidden');
+        if(elements.cameraError) elements.cameraError.classList.remove('hidden');
     }
 }
 
@@ -268,9 +300,10 @@ async function toggleFlash() {
         await track.applyConstraints({ advanced: [{ torch: !isFlashOn }] });
         isFlashOn = !isFlashOn;
         elements.flashBtn.classList.toggle('active', isFlashOn);
+        // Estilo visual para ativado
+        elements.flashBtn.style.backgroundColor = isFlashOn ? 'var(--accent-color)' : '';
     } catch (err) {
         console.error("Erro ao alternar flash:", err);
-        showMessage('info', 'Seu dispositivo não suporta flash ou ocorreu um erro.');
     }
 }
 
@@ -305,10 +338,11 @@ async function flipCamera() {
         await elements.video.play();
         
         const track = cameraStream.getVideoTracks()[0];
-        elements.flashBtn.style.display = track.getCapabilities().torch ? 'flex' : 'none';
+        if(elements.flashBtn) {
+            elements.flashBtn.style.display = track.getCapabilities().torch ? 'flex' : 'none';
+        }
     } catch (err) {
         console.error("Erro ao alternar câmera:", err);
-        showMessage('info', 'Não foi possível alternar a câmera.');
     }
 }
 
@@ -319,7 +353,7 @@ function handleImageUpload(e) {
     
     // Verifica se é uma imagem
     if (!file.type.match('image.*')) {
-        showMessage('info', 'Por favor, selecione um arquivo de imagem (JPEG, PNG, etc.)');
+        alert('Por favor, selecione um arquivo de imagem.');
         return;
     }
     
@@ -329,11 +363,6 @@ function handleImageUpload(e) {
         elements.importedImage.src = event.target.result;
         elements.importedImage.style.display = 'block';
         resetImageTransformations();
-        showMessage('success', 'Imagem importada com sucesso!');
-    };
-    
-    reader.onerror = () => {
-        showMessage('info', 'Erro ao ler o arquivo. Tente novamente.');
     };
     
     reader.readAsDataURL(file);
@@ -346,23 +375,23 @@ function resetImageTransformations() {
     imageScale = 1;
     imageX = 0;
     imageY = 0;
-    imageOpacity = 100;
+    imageOpacity = 50; // Opacidade padrão 50% para ver através
     isMirrored = false;
     
-    elements.rotateXSlider.value = 0;
-    elements.rotateYSlider.value = 0;
-    elements.rotateZSlider.value = 0;
-    elements.opacitySlider.value = 100;
-    elements.mirrorBtn.classList.remove('active');
+    if(elements.rotateXSlider) elements.rotateXSlider.value = 0;
+    if(elements.rotateYSlider) elements.rotateYSlider.value = 0;
+    if(elements.rotateZSlider) elements.rotateZSlider.value = 0;
+    if(elements.opacitySlider) elements.opacitySlider.value = 50;
+    if(elements.mirrorBtn) elements.mirrorBtn.classList.remove('active');
     
     updateImageTransform();
 }
 
 function updateImageTransform() {
-    rotateX = parseInt(elements.rotateXSlider.value);
-    rotateY = parseInt(elements.rotateYSlider.value);
-    rotateZ = parseInt(elements.rotateZSlider.value);
-    imageOpacity = parseInt(elements.opacitySlider.value);
+    if(elements.rotateXSlider) rotateX = parseInt(elements.rotateXSlider.value);
+    if(elements.rotateYSlider) rotateY = parseInt(elements.rotateYSlider.value);
+    if(elements.rotateZSlider) rotateZ = parseInt(elements.rotateZSlider.value);
+    if(elements.opacitySlider) imageOpacity = parseInt(elements.opacitySlider.value);
     
     elements.importedImage.style.transform = `
         translate(${imageX}px, ${imageY}px)
@@ -378,7 +407,10 @@ function updateImageTransform() {
 
 function mirrorImage() {
     isMirrored = !isMirrored;
-    elements.mirrorBtn.classList.toggle('active', isMirrored);
+    if(elements.mirrorBtn) {
+        elements.mirrorBtn.classList.toggle('active', isMirrored);
+        elements.mirrorBtn.style.background = isMirrored ? 'var(--accent-color)' : '';
+    }
     updateImageTransform();
 }
 
@@ -394,7 +426,6 @@ async function toggleFullscreen() {
         }
     } catch (err) {
         console.error("Erro ao alternar tela cheia:", err);
-        showMessage('info', 'Seu navegador não suporta tela cheia ou ocorreu um erro.');
     }
 }
 
@@ -415,13 +446,24 @@ function handleFullscreenChange() {
 // Painéis
 function toggleSettings() {
     isSettingsOpen = !isSettingsOpen;
-    elements.settingsPanel.classList.toggle('hidden', !isSettingsOpen);
+    
+    if (elements.settingsPanel) {
+        elements.settingsPanel.classList.toggle('hidden', !isSettingsOpen);
+        
+        // Efeito de animação no botão
+        if (isSettingsOpen) {
+            elements.settingsBtn.style.transform = 'scale(0.9)';
+            elements.settingsPanel.focus();
+        } else {
+            elements.settingsBtn.style.transform = 'scale(1)';
+        }
+    }
 
+    // Fecha o About se estiver aberto
     if (isSettingsOpen && isAboutOpen) {
         isAboutOpen = false;
         elements.aboutPanel.classList.add('hidden');
     }
-    if (isSettingsOpen) elements.settingsPanel.focus();
 }
 
 function toggleAbout() {
@@ -432,13 +474,6 @@ function toggleAbout() {
         isSettingsOpen = false;
         elements.settingsPanel.classList.add('hidden');
     }
-    if (isAboutOpen) elements.aboutPanel.focus();
-}
-
-
-// Utilitários
-function showError(message) {
-    showMessage('info', message);
 }
 
 // Inicializar aplicação
